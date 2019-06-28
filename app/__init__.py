@@ -78,10 +78,10 @@ try:
 
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    app.config['SQLALCHEMY_POOL_SIZE'] = int(app.config['dev_config']['Database']['pool_size'])
-    app.config['SQLALCHEMY_POOL_RECYCLE'] = int(app.config['dev_config']['Database']['pool_recycle'])
-    app.config['SQLALCHEMY_MAX_OVERFLOW'] = int(app.config['dev_config']['Database']['overflow_size'])
-    app.config['SQLALCHEMY_POOL_TIMEOUT'] = int(app.config['dev_config']['Database']['pool_timeout'])
+    app.config['pool_size'] = int(app.config['dev_config']['Database']['pool_size'])
+    app.config['pool_recycle'] = int(app.config['dev_config']['Database']['pool_recycle'])
+    app.config['max_overflow'] = int(app.config['dev_config']['Database']['overflow_size'])
+    app.config['pool_timeout'] = int(app.config['dev_config']['Database']['pool_timeout'])
 
     db = SQLAlchemy()
     db.init_app(app)
