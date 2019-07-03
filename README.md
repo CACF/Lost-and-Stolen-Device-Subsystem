@@ -93,6 +93,12 @@ Make sure the virtual environment is made using python3
 
 * Replace sample configuration in config.ini to similar configurations in (tests/testdata/config_test.ini)
 
+* Install requirements
+
+```bash
+pip3 install -r requirements.txt
+```
+
 * Run Database migrations using:
 
 ```bash
@@ -114,7 +120,7 @@ make start-dev
 
 This will start a flask development environment for LSDS.
 
-* To run tests create another user other than root user.
+**Note:** Make sure the system is deployed using above mentioned steps before running unit tests. Moreover, you'd require another user other than root user to run unit tests.
 * To run unit tests, run:
 
 ```bash
