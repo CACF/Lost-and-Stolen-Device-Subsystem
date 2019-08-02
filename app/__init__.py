@@ -45,6 +45,9 @@
 """
 
 import sys
+import logging
+from logging.handlers import TimedRotatingFileHandler
+from datetime import datetime
 import yaml
 import configparser
 
@@ -55,6 +58,24 @@ from flask_babel import Babel
 
 app = Flask(__name__)
 CORS(app)
+
+my_logger = logging.getLogger(__name__)
+formatter = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+file_name = datetime.now().strftime('logs/LSDS_logs_%Y-%m-%d_%I:%M:%p.log')
+logging.basicConfig(filename=file_name, level=logging.INFO, format=formatter)
+file_handler = logging.handlers.TimedRotatingFileHandler(
+    filename=file_name,
+    when='D',
+    interval=1,
+    backupCount=5,
+    utc=False,
+    delay=False,
+    atTime=None
+    )
+file_handler.setFormatter(logging.Formatter(formatter))
+file_handler.setLevel(logging.INFO)
+my_logger.addHandler(file_handler)
+my_logger.propagate = False
 
 try:
     config = configparser.ConfigParser()
