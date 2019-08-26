@@ -48,7 +48,7 @@ import json
 import requests
 
 from flask import Response
-from app import app
+from app import app, my_logger
 from ..models.status import Status
 from flask_apispec import MethodResource, doc
 from flask_babel import _
@@ -57,6 +57,7 @@ from flask_babel import _
 @app.route('/')
 def index_route():
     """Flask base route"""
+    my_logger.info('Base route')
     data = {
         'message': _('Welcome to LSDS')
     }
@@ -74,10 +75,12 @@ class BaseRoutes(MethodResource):
         try:
             resp = requests.get('{base}/{version}/version'.format(base=app.config['dev_config']['dirbs_core']['base_url'], version=app.config['dev_config']['dirbs_core']['version']))  # dirbs core imei api call
             if resp.status_code == 200:
+                my_logger.info('CORE connected successfully.')
                 data = {
                     "core_status": _("CORE connected successfully.")
                 }
             else:
+                my_logger.info('CORE connection failed.')
                 data = {
                     "core_status": _("CORE connection failed.")
                 }

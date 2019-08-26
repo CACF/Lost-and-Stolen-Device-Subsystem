@@ -45,25 +45,31 @@
 """
 
 import re
-from app import app
+from app import app, my_logger
 from flask_babel import _
 
 
 def validate_imei(imei):
     """Validate IMEI format."""
+    my_logger.info('Validate IMEI format.')
     match = re.match('^[a-fA-F0-9]{14,16}$', imei)
     min_imei_length = app.config['system_config']['global'].get('min_imei_length')
     max_imei_length = app.config['system_config']['global'].get('max_imei_length')
     if len(imei) < min_imei_length:
+        my_logger.info('Imei length too short.')
         raise ValueError(_("imei too short, should contain at least %(min)s characters", min=min_imei_length))
     if len(imei) > max_imei_length:
+        my_logger.info('Imei length too long.')
         raise ValueError(_("imei too long, cannot contain more than %(max)s characters", max=max_imei_length))
     if match is None:
+        my_logger.info('Imei is Invalid.')
         raise ValueError(_("invalid imei"))
 
 
 def validate_msisdn(msisdn):
     """Validate MSISDN format."""
+    my_logger.info('Validate MSISDN format.')
     match = re.match('^\+?[0-9]{7,15}$', msisdn)
     if match is None:
+        my_logger.info('Msisdn match Invalid')
         raise ValueError(_("invalid msisdn"))

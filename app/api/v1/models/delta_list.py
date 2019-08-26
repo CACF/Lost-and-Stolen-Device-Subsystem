@@ -44,7 +44,7 @@
  POSSIBILITY OF SUCH DAMAGE.                                                               #
 """
 
-from app import db
+from app import db, my_logger
 
 
 class DeltaList(db.Model):
@@ -61,9 +61,11 @@ class DeltaList(db.Model):
     @classmethod
     def insert(cls, imei, status):
         """Insert data."""
+        my_logger.info('Insert imei record in DataBase.')
         try:
             record = cls(imei, status)
             db.session.add(record)
+            my_logger.info('imei, status added successfully.')
             db.session.commit()
         except Exception:
             db.session.rollback()
@@ -72,9 +74,11 @@ class DeltaList(db.Model):
     @classmethod
     def update(cls, imei, status):
         """Update data."""
+        my_logger.info('Update imei record in DataBase.')
         try:
             record = cls.query.filter_by(imei=imei).first()
             record.status = status
+            my_logger.info('imei, status updated successfully.')
             db.session.commit()
         except Exception:
             db.session.rollback()

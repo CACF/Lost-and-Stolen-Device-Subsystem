@@ -44,7 +44,7 @@
  POSSIBILITY OF SUCH DAMAGE.                                                               #
 """
 
-from app import app
+from app import app, my_logger
 import requests
 
 
@@ -54,11 +54,13 @@ class CommonResources:
     @staticmethod
     def get_imei(imei):
         """Return IMEI response fetched from DIRBS core."""
+        my_logger.info('Return IMEI response fetched from DIRBS core.')
 
         imei_url = requests.get(
             '{base}/{version}/imei/{imei}'.format(base=app.config['dev_config']['dirbs_core']['base_url'], version=app.config['dev_config']['dirbs_core']['version'], imei=imei))  # dirbs core imei api call
         try:
             if imei_url.status_code == 200:
+                my_logger.info('Imei response fetched from DIRBS core: %s', imei)
                 response = imei_url.json()
                 return response
             else:
@@ -73,6 +75,7 @@ class CommonResources:
         try:
             tac_response = requests.get('{}/{}/tac/{}'.format(app.config['dev_config']['dirbs_core']['base_url'], app.config['dev_config']['dirbs_core']['version'], tac))  # dirbs core tac api call
             if tac_response.status_code == 200:
+                my_logger.info('TAC response fetched from DIRBS core.')
                 resp = tac_response.json()
                 return resp
             return {"gsma": None}
@@ -87,6 +90,7 @@ class CommonResources:
             reg_response = requests.get(
                 '{base}/{version}/imei/{imei}/info'.format(base=app.config['dev_config']['dirbs_core']['base_url'], version=app.config['dev_config']['dirbs_core']['version'], imei=imei))
             if reg_response.status_code == 200:
+                my_logger.info('Registration information fetched from DIRBS core.')
                 resp = reg_response.json()
                 return resp
             return {}
@@ -96,7 +100,7 @@ class CommonResources:
     @staticmethod
     def serialize_gsma_data(tac_resp, reg_resp):
         """Return serialized device details."""
-
+        my_logger.info('Serialized device details.')
         response = dict()
         if tac_resp['gsma'] and reg_resp:
             response = CommonResources.serialize(response, tac_resp['gsma'], reg_resp)
@@ -114,10 +118,11 @@ class CommonResources:
     def subscribers(imei):
         """Return subscriber's details fetched from DIRBS core."""
         try:
+            my_logger.info('Return subscribers details fetched from DIRBS core.')
             seen_with_url = requests.get('{base}/{version}/imei/{imei}/subscribers?order=Descending'.format(base=app.config['dev_config']['dirbs_core']['base_url'], version=app.config['dev_config']['dirbs_core']['version'], imei=imei))  # dirbs core imei api call
             seen_with_resp = seen_with_url.json()
             result_size = seen_with_resp.get('_keys').get('result_size')
-            seen_with_url = requests.get('{base}/{version}/imei/{imei}/subscribers?order=Descending&limit={result_size}'.format(base=app.config['dev_config']['dirbs_core']['base_url'], version=app.config['dev_config']['dirbs_core']['version'],imei=imei,result_size=result_size))  # dirbs core imei api call
+            seen_with_url = requests.get('{base}/{version}/imei/{imei}/subscribers?order=Descending&limit={result_size}'.format(base=app.config['dev_config']['dirbs_core']['base_url'], version=app.config['dev_config']['dirbs_core']['version'], imei=imei, result_size=result_size))  # dirbs core imei api call
             seen_with_resp = seen_with_url.json()
             data = seen_with_resp.get('subscribers')
             seen = set()
@@ -132,6 +137,7 @@ class CommonResources:
         """Serialize device details from GSMA/registration data."""
 
         try:
+            my_logger.info('Serialize device details from GSMA/registration data.')
             response['brand'] = reg_resp.get('brand_name') if reg_resp.get('brand_name') else gsma_resp.get('brand_name')
             response['model_name'] = reg_resp.get('model') if reg_resp.get('model') else gsma_resp.get('model_name')
             response['model_number'] = reg_resp.get('model_number') if reg_resp.get('model_number') else gsma_resp.get('marketing_name')
@@ -147,6 +153,7 @@ class CommonResources:
         """Serialize device details from registration data."""
 
         try:
+            my_logger.info('Serialize device details from registration data.')
             response['brand'] = status_response.get('brand_name')
             response['model_name'] = status_response.get('model')
             response['model_number'] = status_response.get('model_number')
@@ -161,6 +168,7 @@ class CommonResources:
     def serialize_gsma(response, status_response):
         """Serialize device details from GSMA data."""
         try:
+            my_logger.info('Serialize device details from GSMA data.')
             response['brand'] = status_response.get('brand_name')
             response['model_name'] = status_response.get('model_name')
             response['model_number'] = status_response.get('marketing_name')

@@ -44,7 +44,7 @@
  POSSIBILITY OF SUCH DAMAGE.                                                               #
 """
 
-from app import db
+from app import db, my_logger
 from flask_babel import _
 
 
@@ -72,6 +72,7 @@ class CasePersonalDetails(db.Model):
     @property
     def serialize(self):
         """Serialize data."""
+        my_logger.info('Serialize case personal  details.')
         return {
             'full_name': _(self.full_name),
             'dob': _(self.dob),
@@ -85,7 +86,9 @@ class CasePersonalDetails(db.Model):
     def add(cls, args, case_id):
         """Insert details."""
         try:
+            my_logger.info('Insert case Personal details in DataBase.')
             person = cls(args, case_id)
+            my_logger.info('Personal details added successfully.')
             db.session.add(person)
         except Exception:
             db.session.rollback()
@@ -95,6 +98,7 @@ class CasePersonalDetails(db.Model):
     def update(cls, args, case_id):
         """Update details."""
         try:
+            my_logger.info('Update Case personal details in DataBase.')
             person = cls.query.filter_by(case_id=case_id).first()
             person.full_name = args.get('full_name').strip()
             person.dob = args.get('dob')
@@ -102,6 +106,7 @@ class CasePersonalDetails(db.Model):
             person.gin = args.get('gin')
             person.alternate_number = args.get('number')
             person.email = args.get('email')
+            my_logger.info('Personal details updated successfully.')
             db.session.commit()
         except Exception:
             db.session.rollback()

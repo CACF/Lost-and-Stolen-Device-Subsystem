@@ -44,7 +44,7 @@
  POSSIBILITY OF SUCH DAMAGE.                                                               #
 """
 
-from app import db
+from app import db, my_logger
 
 
 class CaseComments(db.Model):
@@ -66,9 +66,11 @@ class CaseComments(db.Model):
     @classmethod
     def add(cls, case_comment, case_id, user_id, username):
         """Insert data"""
+        my_logger.info('Insert Case comment in DataBase.')
         try:
             comment = cls(case_comment.strip(), case_id, user_id, username.strip())
             db.session.add(comment)
+            my_logger.info('Case comment added successfully.')
             db.session.commit()
         except Exception:
             db.session.rollback()

@@ -46,7 +46,7 @@
 
 import json
 
-from app import db
+from app import db, my_logger
 from flask_babel import _
 from ..assets.response import MIME_TYPES, CODES, MESSAGES
 from ..models.case import Case
@@ -65,15 +65,17 @@ class CaseRoutes(MethodResource):
     @doc(description='Get case details', tags=['Case'])
     def get(self, tracking_id):
         """Return case details by tracking id"""
-
+        my_logger.info('Fetch case details by tracking id')
         try:
             if tracking_id:
                 case_details = Case.get_case(tracking_id)
                 if case_details:
+                    my_logger.info('Case id is matched: %s', tracking_id)
                     response = Response(json.dumps(case_details), status=CODES.get("OK"),
                                         mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                     return response
                 else:
+                    my_logger.info('Case id not mastched: %s', tracking_id)
                     data = {
 
                             "tracking_id": tracking_id,
@@ -85,7 +87,7 @@ class CaseRoutes(MethodResource):
                                         mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                     return response
             else:
-
+                my_logger.info('Undefined tracking_id', tracking_id)
                 data = {
                     "message": _(MESSAGES.get("UNDEFINED_TRACKING_ID"))
                 }
@@ -109,10 +111,12 @@ class CaseRoutes(MethodResource):
     def put(self, tracking_id, **kwargs):
         """Update case personal details."""
         try:
+            my_logger.info('Update case details')
             case_id = Case.update_blocked_info(kwargs, tracking_id)
             case_id = Case.update(kwargs, tracking_id)
 
             if case_id == 406:
+                my_logger.info('Cannot update the case in this status.')
                 data = {
                     'message': _('Case updation not allowed in this status'),
                 }
@@ -121,6 +125,7 @@ class CaseRoutes(MethodResource):
                 return response
 
             if case_id == 400:
+                my_logger.info('Enter one optional field with full name in personal details.')
                 data = {
 
                     "tracking_id": tracking_id,
@@ -133,6 +138,7 @@ class CaseRoutes(MethodResource):
                 return response
 
             if case_id:
+                my_logger.info('Case updated successfully: %s', tracking_id)
                 data = {
                     'message': _('Case updated successfully'),
                     'tracking_id': tracking_id
@@ -142,6 +148,7 @@ class CaseRoutes(MethodResource):
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                 return response
             else:
+                my_logger.info('Case not found: %s', tracking_id)
                 data = {
 
                     "tracking_id": tracking_id,
@@ -170,6 +177,7 @@ class CaseRoutes(MethodResource):
             case_id = Case.update_status(args, tracking_id)
 
             if case_id == 406:
+                my_logger.info('Unable to update status: %s', case_id)
                 data = {
                         'message': _('Unable to update case status. Either Blocking is disabled or case has already been recovered.'),
                     }
@@ -178,6 +186,7 @@ class CaseRoutes(MethodResource):
                 return response
 
             if case_id == 409:
+                my_logger.info('Case already exist in same status.')
                 data = {
                     'message': _('Case already has the same status.'),
                 }
@@ -186,11 +195,13 @@ class CaseRoutes(MethodResource):
                 return response
 
             if case_id:
+                my_logger.info('Case status updated successfully:%s', tracking_id)
                 data = {'message': _('Case status updated'), 'tracking_id': tracking_id}
                 response = Response(json.dumps(data), status=CODES.get("OK"),
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                 return response
             else:
+                my_logger.info('Case not found:%s', tracking_id)
                 data = {
 
                     "tracking_id": tracking_id,
@@ -216,6 +227,7 @@ class CaseList(MethodResource):
     @staticmethod
     def serialize(cases):
         """Serialize response."""
+        my_logger.info('Serialize response, cases.')
         case_list = []
         for row in cases:
             case_list.append(dict((col, val) for col, val in row.items()))
@@ -270,14 +282,16 @@ class CaseList(MethodResource):
     @use_kwargs(CasesSchema().fields_dict, locations=['query'])
     def get(self, **kwargs):
         """Return list of cases."""
-
+        my_logger.info('Get list of cases')
         status = kwargs.get('status')
         try:
             if status:
+                my_logger.info('Fetch list of all cases through sql query.')
                 sql = "select c.*, cid.date_of_incident, cid.nature_of_incident, cpd.full_name, cpd.address, cpd.alternate_number, cpd.dob, cpd.email, cpd.gin, dd.brand, dd.model_name, dd.physical_description, s.description as status, ni.name as incident_type, string_agg(distinct(di.imei::text), ', '::text) as imeis, string_agg(distinct(msisdn::text), ', '::text) as msisdns, string_agg(distinct(json_build_object('comment',cc.comments, 'comment_date',cc.comment_date, 'user_id',cc.user_id, 'username',cc.username, 'id',cc.id)::text), '| '::text) as comments from public.case as c left join case_comments as cc on cc.case_id=c.id, case_incident_details as cid, case_personal_details as cpd, device_details as dd, device_imei as di, device_msisdn as dm, public.status as s, public.nature_of_incident as ni where c.case_status="+str(status)+" and cid.case_id=c.id and cpd.case_id=c.id and dd.case_id=c.id and di.device_id=dd.id and dm.device_id=dd.id  and s.id=c.case_status and ni.id=cid.nature_of_incident group by c.id, cid.date_of_incident, cid.nature_of_incident, cpd.full_name, cpd.dob, cpd.alternate_number, cpd.address, cpd.email, cpd.gin, dd.brand, dd.model_name, dd.physical_description, s.description, ni.name order by c.updated_at desc"
                 cases = db.engine.execute(sql)
                 cases = CaseList.serialize(cases)
                 if cases:
+                    my_logger.info('list of all cases for pagination.')
                     data = Pagination.get_paginated_list(cases, '/cases', start=kwargs.get('start', 1),
                                                          limit=kwargs.get('limit', 3))
                     response = Response(json.dumps(data), status=CODES.get("OK"),
@@ -334,18 +348,20 @@ class InsertCase(MethodResource):
     @use_kwargs(CaseInsertSchema().fields_dict, locations=['json'])
     def post(self, **kwargs):
         """Insert case details."""
+        my_logger.info('Insert case details.')
         try:
             tracking_id = Case.create(kwargs)
-
             if tracking_id.get('code') == 409:
+                my_logger.info('IMEI found duplicate in database.')
                 data = {
-                    'message': _('IMEI: %(imei)s is a duplicate entry.',imei=tracking_id.get('data')),
+                    'message': _('IMEI: %(imei)s is a duplicate entry.', imei=tracking_id.get('data')),
                 }
                 response = Response(json.dumps(data), status=CODES.get("CONFLICT"),
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                 return response
 
             if tracking_id.get('code') == 400:
+                my_logger.info('Enter  at least One optional Field in Personal Details: %s', tracking_id)
                 data = {
                     "message": _("Enter at least one optional field with full name in personal details.")
                 }
@@ -355,6 +371,7 @@ class InsertCase(MethodResource):
                 return response
 
             if tracking_id.get('code') == 200:
+                my_logger.info('Case added successfully: %s', tracking_id)
                 data = {
                     'message': _('case successfully added'),
                     'tracking_id': tracking_id.get('data')
@@ -364,6 +381,7 @@ class InsertCase(MethodResource):
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                 return response
             else:
+                my_logger.info('Case Insertion failed: %s', tracking_id)
                 data = {
                     'message': _('case addition failed'),
                 }
@@ -389,10 +407,12 @@ class UpdateCase(MethodResource):
     @use_kwargs(CaseGetBlockedSchema().fields_dict, locations=['json'])
     def patch(self, tracking_id, **args):
         """Update case get blocked information."""
+        my_logger.info('Update case Get Blocked Information.')
         try:
             case_id = Case.update_blocked_info(args, tracking_id)
 
             if case_id == 406:
+                my_logger.info('Case not Allowed to updated in this status: %s', case_id)
                 data = {
                     'message': _('Case updation not allowed in this status'),
                 }
@@ -401,11 +421,13 @@ class UpdateCase(MethodResource):
                 return response
 
             if case_id:
+                my_logger.info('Case Status updated successfully: %s', tracking_id)
                 data = {'message': _('Case status updated'), 'tracking_id': tracking_id}
                 response = Response(json.dumps(data), status=CODES.get("OK"),
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                 return response
             else:
+                my_logger.info('Case Not Found:%s', tracking_id)
                 data = {
 
                     "tracking_id": tracking_id,

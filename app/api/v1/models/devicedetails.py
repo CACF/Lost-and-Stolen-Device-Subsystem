@@ -44,7 +44,7 @@
  POSSIBILITY OF SUCH DAMAGE.                                                               #
 """
 
-from app import db
+from app import db, my_logger
 # noinspection PyUnresolvedReferences
 from ..models.deviceimei import DeviceImei
 # noinspection PyUnresolvedReferences
@@ -71,6 +71,7 @@ class DeviceDetails(db.Model):
     @property
     def serialize(self):
         """Serialize data."""
+        my_logger.info('Serialize device details.')
         return {
             'brand': self.brand,
             'model_name': self.model_name,
@@ -83,14 +84,14 @@ class DeviceDetails(db.Model):
     def add(cls, args, case_id):
         """Insert details."""
         try:
+            my_logger.info('Insert device details into DataBase.')
             device = cls(case_id, args.get("brand").strip(), args.get("model_name").strip(),
                          args.get("description").strip())
-
+            my_logger.info('Device details added successfully.')
             db.session.add(device)
             db.session.flush()
 
             DeviceImei.add(device.id, args.get("imeis"))
-
             DeviceMsisdn.add(device.id, args.get("msisdns"))
 
             return device.__repr__()

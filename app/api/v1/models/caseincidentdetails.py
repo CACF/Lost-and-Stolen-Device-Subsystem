@@ -44,7 +44,7 @@
  POSSIBILITY OF SUCH DAMAGE.                                                               #
 """
 
-from app import db
+from app import db, my_logger
 
 
 class CaseIncidentDetails(db.Model):
@@ -63,6 +63,7 @@ class CaseIncidentDetails(db.Model):
     @property
     def serialize(self):
         """Serialize data."""
+        my_logger.info('Serialize data, Case incident details.')
         return {
             'incident_date': self.date_of_incident if self.date_of_incident else 'N/A',
             'incident_nature': self.natureofincident.serialize
@@ -71,6 +72,7 @@ class CaseIncidentDetails(db.Model):
     @classmethod
     def add(cls, args, case_id):
         """Insert data."""
+        my_logger.info('Insert Case incident details in DataBase.')
         try:
             incident_obj = cls(args, case_id)
             db.session.add(incident_obj)

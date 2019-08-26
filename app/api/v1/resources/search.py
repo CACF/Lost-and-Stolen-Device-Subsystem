@@ -44,7 +44,7 @@
  POSSIBILITY OF SUCH DAMAGE.                                                               #
 """
 
-from app import app, db
+from app import app, db, my_logger
 import json
 from datetime import datetime, timedelta
 from flask import Response
@@ -64,7 +64,8 @@ class Search(MethodResource):
         cases = []
         for row in data:
             cases.append(dict((col, val) for col, val in row.items()))
-        if cases:  # if reported cases are resent in database
+        if cases:  # if reported cases are present in database
+            my_logger.info('Reported cases present in Database.')
             paginated_data = Pagination.get_paginated_list(cases, '/search', start=kwargs.get('start', 1),
                                                            limit=kwargs.get('limit', 3))
 
@@ -72,6 +73,7 @@ class Search(MethodResource):
             response = Response(json.dumps(paginated_data, default=str), status=CODES.get("OK"),
                                 mimetype=MIME_TYPES.get('APPLICATION_JSON'))
         else:  # if database has no reported cases
+            my_logger.info('Reported cases not found in Database.')
             data = {
                 "start": kwargs.get('start', 1),
                 "previous": "",
@@ -136,14 +138,17 @@ class Search(MethodResource):
         sql = "select * from search"
         try:
             if count == 0:  # return all cases if no search criteria
+                my_logger.info('If no search criteria return all cases response.')
                 data = db.engine.execute(sql+" order by updated_at desc")
                 response = Search.get_results(kwargs, data)
                 return response
             else:  # if there is a search criteria
+                my_logger.info('when there is search criteria.')
                 sql = "select * from search where"
                 for x in request_data:
                     count = count - 1
                     if count == 0:  # if there is single parameter in search query
+                        my_logger.info('Analysis search criteria.')
                         sql = Search.build_query(sql, x, request_data)
                     else:  # if there are multiple parameter in search query
                         sql = Search.build_query(sql, x, request_data, 'AND')

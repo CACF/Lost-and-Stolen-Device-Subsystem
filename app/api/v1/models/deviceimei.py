@@ -44,7 +44,7 @@
  POSSIBILITY OF SUCH DAMAGE.                                                               #
 """
 
-from app import db
+from app import db, my_logger
 
 
 class DeviceImei(db.Model):
@@ -62,11 +62,14 @@ class DeviceImei(db.Model):
     def serialize(self):
         """Serialize."""
         return self.imei
+    my_logger.info('Imei Serialized.')
 
     @classmethod
     def add(cls, device_id, imeis):
         """Insert data."""
+        my_logger.info('Insert Imei in DataBase')
         try:
+            my_logger.info('device imei added.')
             for imei in imeis:
                 device_imei = cls(imei, device_id)
                 db.session.add(device_imei)

@@ -47,7 +47,7 @@
 import json
 import requests
 
-from app import app
+from app import app, my_logger
 from flask import Response, request
 from flask_apispec import MethodResource, doc
 from flask_babel import _
@@ -64,6 +64,7 @@ class FetchImei(MethodResource):
     def get(self, imei):
         """Return IMEI relevant information."""
         try:
+            my_logger.info('Fetch Imei relevant details.')
             validate_imei(imei)
 
             seen_with = request.args.get('seen_with')
@@ -77,6 +78,7 @@ class FetchImei(MethodResource):
 
                 if seen_with:
                     if seen_with == '1':
+                        my_logger.info('Seen with Information.')
                         seen_with_data = CommonResources.subscribers(imei)
                         response = dict(response, **seen_with_data)
 
@@ -86,6 +88,7 @@ class FetchImei(MethodResource):
                 response = Response(json.dumps(response), status=200, mimetype=MIME_TYPES.get('APPLICATION_JSON'))
                 return response
             else:
+                my_logger.info('Failed to Fetch IMEI details from core system.')
                 data = {
                     "message": _("Failed to retrieve IMEI response from core system.")
                 }
@@ -116,6 +119,7 @@ class FetchMsisdn(MethodResource):
     def get(self, msisdn):
         """Fetch MSISDN relevant information"""
         try:
+            my_logger.info('Fetch MSISDN relevant details.')
             validate_msisdn(msisdn)
 
             url = '{base_url}/{version}/msisdn/{msisdn}'.format(
@@ -128,6 +132,7 @@ class FetchMsisdn(MethodResource):
             data = res.json()
 
             if data['results']:
+                my_logger.info('check Imei is not in seen.')
                 seen = set()
                 data['results'] = [x for x in data['results'] if [(x['imei_norm'], x['imsi']) not in seen, seen.add((x['imei_norm'], x['imsi']))][0]]
 
@@ -138,12 +143,13 @@ class FetchMsisdn(MethodResource):
                 }
                 headers = {'content-type': 'application/json', 'charset': 'utf-8'}
                 tac_response = requests.post('{base_url}/{version}/tac'.format(base_url=app.config['dev_config']['dirbs_core']['base_url'], version=app.config['dev_config']['dirbs_core']['version']), data=json.dumps(batch_req), headers=headers)  # dirbs core batch tac api call
-
+                my_logger.info('Return tac response.')
                 tac_response = tac_response.json()
 
                 for tac in tac_response['results']:
                     for records in data['results']:
                         if tac['tac'] == records['imei_norm'][:8]:
+                            my_logger.info('Check Registration information of imei_norm "8".')
                             registration = CommonResources.get_reg(records['imei_norm'])
                             gsma = CommonResources.serialize_gsma_data(tac_resp=tac, reg_resp=registration)
                             del records['registration']

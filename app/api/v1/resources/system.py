@@ -46,7 +46,7 @@
 
 import json
 
-from app import app
+from app import app, my_logger
 from flask import Response
 from flask_apispec import MethodResource, doc, marshal_with
 from flask_babel import _
@@ -65,8 +65,10 @@ class IncidentNature(MethodResource):
     @marshal_with(ResponseSchema(), code=500, description='Internal server error')
     def get(self):
         """Return types of incidents."""
+        my_logger.info('Get types of incidents.')
         try:
             incident_types = NatureOfIncident().query.all()
+            my_logger.info('Query all NatureOfIncident and return type of incident. %s', incident_types)
             response = Response(IncidentNatureSchema(many=True).dumps(incident_types).data, status=CODES.get('OK'),
                                 mimetype=MIME_TYPES.get('APPLICATION_JSON'))
             return response
@@ -91,8 +93,10 @@ class CaseStatus(MethodResource):
     @marshal_with(ResponseSchema(), code=500, description='Internal server error')
     def get(self):
         """Return types of lost/stolen status."""
+        my_logger.info('Get types of lost/stolen status.')
         try:
             case_statuses = Status().query.all()
+            my_logger.info('Query all case_status and return case status. %s', case_statuses)
             response = Response(CaseStatusSchema(many=True).dumps(case_statuses).data, status=CODES.get("OK"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
             return response
         except Exception as e:

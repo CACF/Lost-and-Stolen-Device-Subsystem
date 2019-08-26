@@ -44,7 +44,7 @@
  POSSIBILITY OF SUCH DAMAGE.                                                               #
 """
 
-from app import db
+from app import db, my_logger
 
 
 class DeviceMsisdn(db.Model):
@@ -66,7 +66,9 @@ class DeviceMsisdn(db.Model):
     @classmethod
     def add(cls, device_id, msisdns):
         """Insert data."""
+        my_logger.info('Insert msisdn in DataBase.')
         try:
+            my_logger.info('Device msisdn added.')
             for msisdn in msisdns:
                 device_msisdn = cls(device_id, msisdn)
                 db.session.add(device_msisdn)

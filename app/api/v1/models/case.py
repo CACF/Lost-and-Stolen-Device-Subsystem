@@ -47,7 +47,7 @@
 # noinspection PyProtectedMember
 from sqlalchemy.orm.collections import InstrumentedList
 from sqlalchemy import or_, and_
-from app import db
+from app import db, my_logger
 # noinspection PyUnresolvedReferences
 from ..models.caseincidentdetails import CaseIncidentDetails
 # noinspection PyUnresolvedReferences
@@ -111,6 +111,7 @@ class Case(db.Model):
     def __get_obj(instr_obj):
         """Return string value from instrumented list object."""
         try:
+            my_logger.info('Return string value from instrumented list object.')
             if type(instr_obj) == InstrumentedList:
                 return instr_obj[0]
             return None
@@ -124,6 +125,7 @@ class Case(db.Model):
             if tracking_id:
                 case = Case.query.filter_by(tracking_id=tracking_id).first()
                 if case:
+                    my_logger.info('Retrieve data against this tracking id: %s', tracking_id)
                     return case.serialize
             return {}
         except Exception:
@@ -137,6 +139,7 @@ class Case(db.Model):
                 flag = db.session.query(DeviceImei).join(DeviceImei.devicedetails).join(DeviceDetails.case).\
                     filter(and_(or_(Case.case_status == 3, Case.case_status == 2), DeviceImei.imei == imei)).first()
                 if flag:
+                    my_logger.info('Searching for duplicate Imei: %s', imei)
                     return {'flag': flag, 'imei': imei}
             return {'flag': None, 'imei': None}
         except Exception:
@@ -149,6 +152,7 @@ class Case(db.Model):
         try:
             flag = Case.find_data(args['device_details']['imeis'])
             if flag.get('flag') is not None:
+                my_logger.info('Inserting data into DataBase, case information.')
                 return {"code": CODES.get('CONFLICT'), "data": flag.get('imei')}
             else:
                 case = cls(args)
@@ -159,17 +163,20 @@ class Case(db.Model):
                 if any(item is not None for item in [personal_details.get('email'), personal_details.get('dob'),
                                                      personal_details.get('address'), personal_details.get('gin'),
                                                      personal_details.get('number')]):
-
+                    my_logger.info('Enter personal details field.')
                     case_incident_args = args.get("incident_details")
                     device_details = args.get("device_details")
-
                     DeviceDetails.add(device_details, case.id)
                     CaseIncidentDetails.add(case_incident_args, case.id)
                     CasePersonalDetails.add(personal_details, case.id)
+                    my_logger.info('Case Incident details added.')
+                    my_logger.info('Case Device details added.')
+                    my_logger.info('Case Personal details added.')
 
                     db.session.commit()
                     return {"code": CODES.get('OK'), "data": case.tracking_id}
                 else:
+                    my_logger.info('Response Codes "BAD REQUEST" occurred.')
                     return {"code": CODES.get('BAD_REQUEST')}
 
         except Exception:
@@ -193,9 +200,11 @@ class Case(db.Model):
     def update_case_info(cls, args, case_id):
         """Update get blocked column in case model."""
         try:
+            my_logger.info('Updating case get blocked column in case model.')
             case = cls.query.filter_by(id=case_id).first()
             case.get_blocked = args["get_blocked"] if args.get("get_blocked") is not None else case.get_blocked
             db.session.add(case)
+            my_logger.info('Column updated successfully')
             db.session.commit()
         except Exception:
             db.session.rollback()
@@ -205,9 +214,11 @@ class Case(db.Model):
     def update(cls, args, tracking_id):
         """Update personal details by tracking id."""
         try:
+            my_logger.info('Update personal details by tracking id.')
             case = cls.query.filter_by(tracking_id=tracking_id).first()
             if case:
                 if case.case_status == 3:
+                    my_logger.info('Check if "case status" is 3.')
 
                     personal_details = args.get("personal_details")
                     # status_args = args.get('status_args')
@@ -215,19 +226,23 @@ class Case(db.Model):
                     if any(item is not None for item in [personal_details.get('email'), personal_details.get('dob'),
                                                          personal_details.get('address'), personal_details.get('gin'),
                                                          personal_details.get('number')]):
+                        my_logger.info('Check if any one of personal detail is true Update case personal details.')
 
                         CasePersonalDetails.update(personal_details, case.id)
 
                         # CaseComments.add(status_args.get('case_comment'), case.id, status_args.get('user_id'),
                         #                status_args.get('username'))
+                        my_logger.info('Case personal details Updated successfully in dataBase: %s', tracking_id)
 
                         Case.update_case(tracking_id)
 
                         db.session.commit()
                         return case.tracking_id
                     else:
+                        my_logger.info('Code Bad Request occurred')
                         return CODES.get('BAD_REQUEST')
                 else:
+                    my_logger.info('Case status is not Pending(3), can not be updated: %s', tracking_id)
                     return CODES.get('NOT_ACCEPTABLE')
             else:
                 return None
@@ -241,9 +256,11 @@ class Case(db.Model):
     def update_blocked_info(cls, args, tracking_id):
         """Update case get blocked information by tracking id."""
         try:
+            my_logger.info('Update case get blocked information by tracking id.')
             case = cls.query.filter_by(tracking_id=tracking_id).first()
             if case:
                 if case.case_status == 3:
+                    my_logger.info('Check if case status is 3')
                     case_details = args.get("case_details")
                     status_args = args.get('status_args')
 
@@ -253,10 +270,12 @@ class Case(db.Model):
                                      status_args.get('username'))
 
                     Case.update_case(tracking_id)
+                    my_logger.info('Update case get blocked information by tracking id: %s', tracking_id)
 
                     db.session.commit()
                     return case.tracking_id
                 else:
+                    my_logger.info('Case status is not Pending(3), can not be updated: %s', tracking_id)
                     return CODES.get('NOT_ACCEPTABLE')
             else:
                 return None
@@ -273,26 +292,35 @@ class Case(db.Model):
             case = cls.query.filter_by(tracking_id=tracking_id).first()
             if case:
                 if case.get_blocked:
+                    my_logger.info('Update status in Database')
                     if (case.case_status == 2 and args.get('case_status') != 3) or (case.case_status == 3):
+                        my_logger.info('case_status = 2 or = 3')
                         if case.case_status != args.get('case_status'):
                             case.case_status = args.get('case_status')
                             CaseComments.add(args.get('case_comment'), case.id, args.get('user_id'), args.get('username'))
+                            my_logger.info('Adding args when case_status is 2 & != 3 or 3: %s', case.id)
                             db.session.commit()
                             return case.tracking_id
                         else:
+                            my_logger.info('Code Conflict occurred.')
                             return CODES.get('CONFLICT')
                     else:
+                        my_logger.info('Case status can not be updated.')
                         return CODES.get('NOT_ACCEPTABLE')
                 else:
                     if case.case_status == 3 and args.get('case_status') != 2:
+                        my_logger.info('Case_status = 3 and not = 2.')
                         if case.case_status != args.get('case_status'):
                             case.case_status = args.get('case_status')
                             CaseComments.add(args.get('case_comment'), case.id, args.get('user_id'), args.get('username'))
+                            my_logger.info('Adding args when case_status is 2 & 3: %s', case.id)
                             db.session.commit()
                             return case.tracking_id
                         else:
+                            my_logger.info('Code Conflict occurred.')
                             return CODES.get('CONFLICT')
                     else:
+                        my_logger.info('Case status can not be updated.')
                         return CODES.get('NOT_ACCEPTABLE')
             else:
                 return None

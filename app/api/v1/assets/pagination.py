@@ -44,6 +44,7 @@
  POSSIBILITY OF SUCH DAMAGE.                                                               #
 """
 
+
 class Pagination:
     """Class for data pagination."""
     def __init__(self):
