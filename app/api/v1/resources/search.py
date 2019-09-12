@@ -131,6 +131,8 @@ class Search(MethodResource):
     @use_kwargs(SearchSchema().fields_dict, locations=['json'])
     def post(self, **kwargs):
         """Return search results."""
+        trigger = 'SET ROLE case_user; COMMIT;'
+        db.session.execute(trigger)
         request_data = kwargs.get("search_args")
         count = len(request_data)
         sql = "select * from search"

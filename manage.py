@@ -119,6 +119,44 @@ def DbTrigger():
 
 
 @manager.command
+def CreateRoles():
+    """Create db roles and grant relevant privileges."""
+    roles = ['case_user', 'search_user', 'delta_list_user']
+    for role in roles:
+        check = "SELECT 1 FROM pg_roles WHERE rolname='%s';" % (role)
+        if db.engine.execute(check).fetchone() is None:
+            trigger = "CREATE ROLE %s;" % (role)
+            db.engine.execute(trigger)
+            print("created successfully")
+        else:
+            drop_privileges = "DROP OWNED BY %s;" % role
+            db.engine.execute(drop_privileges)
+            drop_role = "DROP ROLE %s;" % role
+            db.engine.execute(drop_role)
+            trigger = "CREATE ROLE %s;" % role
+            db.engine.execute(trigger)
+            print("Already existed but created successfully")
+    grant_access_case_user = "GRANT SELECT, UPDATE, INSERT ON public.case, public.case_comments, public.case_incident_details, public.case_personal_details, public.device_details, public.device_imei, public.device_msisdn, public.nature_of_incident, public.status TO case_user"
+    db.engine.execute(grant_access_case_user)
+    grant_squences = "GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO case_user"
+    db.engine.execute(grant_squences)
+    print("Permission granted to role case_user")
+    grant_access_search_user = "GRANT SELECT ON public.search TO search_user"
+    db.engine.execute(grant_access_search_user)
+    print("Permission granted to role search_user")
+    grant_access_delta_list_user = "GRANT SELECT ON public.case, public.device_details, public.device_imei TO delta_list_user"
+    db.engine.execute(grant_access_delta_list_user)
+    print("Permission granted to role delta_list_user for case model")
+    grant_access_delta_list_user = "GRANT SELECT, INSERT, UPDATE ON public.delta_list TO delta_list_user"
+    db.engine.execute(grant_access_delta_list_user)
+    grant_squences = "GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO delta_list_user"
+    db.engine.execute(grant_squences)
+    print("Permission granted to role delta_list_user for delta list model")
+
+    return "Roles created successfully"
+
+
+@manager.command
 def genlist():
     return GenList.create_list()
 
@@ -126,6 +164,7 @@ def genlist():
 @manager.command
 def GenFullList():
     return GenList.get_full_list()
+
 
 if __name__ == '__main__':
     manager.run()

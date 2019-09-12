@@ -82,6 +82,8 @@ class GenList:
     def create_list():
         """Generates delta stolen list."""
         try:
+            trigger = 'SET ROLE delta_list_user; COMMIT;'
+            db.session.execute(trigger)
             resp = GenList.get_distinct_imeis()
             app.logger.info("Comparing IMEIs with previous delta...")
             delta_list = []  # delta list
@@ -142,6 +144,8 @@ class GenList:
     @staticmethod
     def get_full_list():
         try:
+            trigger = 'SET ROLE delta_list_user; COMMIT;'
+            db.session.execute(trigger)
             app.logger.info("Full List generation has started.")
             response_data = []  # distinct imeis list
             sql = "select case_status, created_at, i.imei from public.case as c, device_details as d, device_imei as i where d.case_id=c.id and d.id=i.device_id"

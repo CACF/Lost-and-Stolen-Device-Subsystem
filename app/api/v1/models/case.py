@@ -60,7 +60,6 @@ from ..models.deviceimei import DeviceImei
 from ..models.casecomments import CaseComments
 from ..assets.response import CODES
 
-
 class Case(db.Model):
     """Case database model"""
     id = db.Column(db.Integer, primary_key=True)
@@ -122,6 +121,8 @@ class Case(db.Model):
         """Retrieve data by tracking id."""
         try:
             if tracking_id:
+                trigger = 'SET ROLE case_user; COMMIT;'
+                db.session.execute(trigger)
                 case = Case.query.filter_by(tracking_id=tracking_id).first()
                 if case:
                     return case.serialize
@@ -147,6 +148,8 @@ class Case(db.Model):
     def create(cls, args):
         """Insert data into database."""
         try:
+            trigger = 'SET ROLE case_user; COMMIT;'
+            db.session.execute(trigger)
             flag = Case.find_data(args['device_details']['imeis'])
             if flag.get('flag') is not None:
                 return {"code": CODES.get('CONFLICT'), "data": flag.get('imei')}
@@ -176,6 +179,7 @@ class Case(db.Model):
             db.session.rollback()
             raise Exception
         finally:
+            print(db.session.execute('select current_role;').first())
             db.session.close()
 
     @classmethod
@@ -205,6 +209,8 @@ class Case(db.Model):
     def update(cls, args, tracking_id):
         """Update personal details by tracking id."""
         try:
+            trigger = 'SET ROLE case_user; COMMIT;'
+            db.session.execute(trigger)
             case = cls.query.filter_by(tracking_id=tracking_id).first()
             if case:
                 if case.case_status == 3:
@@ -241,6 +247,8 @@ class Case(db.Model):
     def update_blocked_info(cls, args, tracking_id):
         """Update case get blocked information by tracking id."""
         try:
+            trigger = 'SET ROLE case_user; COMMIT;'
+            db.session.execute(trigger)
             case = cls.query.filter_by(tracking_id=tracking_id).first()
             if case:
                 if case.case_status == 3:
@@ -270,6 +278,8 @@ class Case(db.Model):
     def update_status(cls, args, tracking_id):
         """Update status."""
         try:
+            trigger = 'SET ROLE case_user; COMMIT;'
+            db.session.execute(trigger)
             case = cls.query.filter_by(tracking_id=tracking_id).first()
             if case:
                 if case.get_blocked:
