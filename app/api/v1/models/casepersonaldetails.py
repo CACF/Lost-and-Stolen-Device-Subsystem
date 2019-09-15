@@ -58,6 +58,9 @@ class CasePersonalDetails(db.Model):
     gin = db.Column(db.String(30), server_default='N/A')
     alternate_number = db.Column(db.String(30), server_default='N/A')
     email = db.Column(db.String(65), server_default='N/A')
+    father_name = db.Column(db.String(1000))
+    mother_name = db.Column(db.String(1000))
+    district = db.Column(db.String(1000))
 
     def __init__(self, args, case_id):
         """Constructor"""
@@ -68,6 +71,10 @@ class CasePersonalDetails(db.Model):
         self.gin = args.get("gin")
         self.alternate_number = args.get("number")
         self.email = args.get("email")
+        self.father_name = args.get("father_name").strip()
+        self.mother_name = args.get("mother_name").strip()
+        self.district = args.get("district").strip()
+
 
     @property
     def serialize(self):
@@ -78,7 +85,10 @@ class CasePersonalDetails(db.Model):
             'address': _(self.address),
             'gin': _(self.gin),
             'number': _(self.alternate_number),
-            'email': _(self.email)
+            'email': _(self.email),
+            'father_name': _(self.father_name),
+            'mother_name': _(self.mother_name),
+            'district': _(self.district)
         }
 
     @classmethod
@@ -102,6 +112,9 @@ class CasePersonalDetails(db.Model):
             person.gin = args.get('gin')
             person.alternate_number = args.get('number')
             person.email = args.get('email')
+            person.father_name = args.get('father_name')
+            person.mother_name = args.get('mother_name')
+            person.district = args.get('district')
             db.session.commit()
         except Exception:
             db.session.rollback()

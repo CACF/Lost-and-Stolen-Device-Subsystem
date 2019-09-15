@@ -64,8 +64,6 @@ api.add_resource(BaseRoutes, '/')
 # noinspection PyTypeChecker
 api.add_resource(FetchImei, '/imei/<imei>')
 # noinspection PyTypeChecker
-api.add_resource(FetchMsisdn, '/msisdn/<msisdn>')
-# noinspection PyTypeChecker
 api.add_resource(IncidentNature, '/incident_types')
 # noinspection PyTypeChecker
 api.add_resource(CaseStatus, '/status_types')
