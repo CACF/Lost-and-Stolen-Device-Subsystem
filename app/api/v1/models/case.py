@@ -179,7 +179,6 @@ class Case(db.Model):
             db.session.rollback()
             raise Exception
         finally:
-            print(db.session.execute('select current_role;').first())
             db.session.close()
 
     @classmethod

@@ -243,7 +243,10 @@ class CaseList(MethodResource):
                         "gin": _(case.get('gin')),
                         "email": _(case.get('email')),
                         "number": _(case.get('alternate_number')),
-                        "full_name": case.get('full_name')
+                        "full_name": case.get('full_name'),
+                        "father_name": case.get('father_name'),
+                        "mother_name": case.get('mother_name'),
+                        "district": case.get('district')
                     },
                     "tracking_id": case.get('tracking_id'),
                     "comments": comment_list,

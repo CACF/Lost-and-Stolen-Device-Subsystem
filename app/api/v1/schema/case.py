@@ -73,6 +73,7 @@ class PersonalDetailsSchema(Schema):
     father_name = fields.Str(required=True, validate=validate_fullname)
     mother_name = fields.Str(required=True, validate=validate_fullname)
     district = fields.Str(required=True, validate=validate_fullname)
+    landline_number = fields.Str(required=True, validate=validate_number)
 
 
 class IncidentDetailsSchema(Schema):
@@ -162,6 +163,10 @@ class SearchArgsSchema(Schema):
     full_name = fields.Str()
     gin = fields.Str()
     address = fields.Str()
+    father_name = fields.Str()
+    mother_name = fields.Str()
+    district = fields.Str()
+    landline_number = fields.Str()
     incident = fields.Str()
     date_of_incident = fields.Str()
     brand = fields.Str()
@@ -206,7 +211,11 @@ class SearchResponseSchema(Schema):
             "address": data.get('address'),
             "gin": data.get('gin'),
             "number": data.get('alternate_number'),
-            "email": data.get('email')
+            "email": data.get('email'),
+            "father_name": data.get('father_name'),
+            "mother_name": data.get('mother_name'),
+            "district": data.get('district'),
+            "landline_number": data.get('landline_number')
         }
         data['device_details'] = {
             "brand": data.get('brand'),

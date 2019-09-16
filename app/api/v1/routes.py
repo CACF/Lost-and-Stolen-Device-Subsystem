@@ -83,7 +83,7 @@ docs = apidoc.init_doc()
 
 def register():
     """Method to register routes for docs."""
-    for route in [BaseRoutes, FetchImei, FetchMsisdn, IncidentNature, CaseStatus, CaseList, Search,
+    for route in [BaseRoutes, FetchImei, IncidentNature, CaseStatus, CaseList, Search,
                   CaseRoutes, InsertCase, UpdateCase]:
         docs.register(route)
 
