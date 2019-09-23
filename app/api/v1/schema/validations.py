@@ -61,15 +61,15 @@ def validate_username(val):
         raise ValidationError(_("Username is invalid. Does not match the selected language or invalid format."))
 
 
-def validate_fullname(val):
+def validate_fullname(val, name):
     """Validate username format."""
     if len(val) < 1:
-        raise ValidationError(_("Fullname should contain more than one character"))
+        raise ValidationError(_(name + " should contain more than one character"))
     if len(val) > 1000:
-        raise ValidationError(_("Fullname cannot contain more than 1000 characters"))
+        raise ValidationError(_(name + " cannot contain more than 1000 characters"))
     match = re.match(app.config['system_config']['regex'][app.config['system_config']['language_support']['default']]['full_name'],val)
     if match is None:
-        raise ValidationError(_("Fullname is invalid. Does not match the selected language or invalid format."))
+        raise ValidationError(_(name + " is invalid. Does not match the selected language or invalid format."))
 
 
 def validate_comment(val):

@@ -64,15 +64,15 @@ class UserSchema(Schema):
 
 class PersonalDetailsSchema(Schema):
     """Personal details schema."""
-    full_name = fields.Str(required=True, validate=validate_fullname)
+    full_name = fields.Str(required=True, validate=lambda p: validate_fullname(val=p, name="Fullname"))
     gin = fields.Str(required=True, validate=validate_gin)
     address = fields.Str(required=True, validate=validate_address)
     email = fields.Str(required=True, validate=validate_email)
     dob = fields.Str(required=True, validate=validate_date)
     number = fields.Str(required=True, validate=validate_number)
-    father_name = fields.Str(required=True, validate=validate_fullname)
-    mother_name = fields.Str(required=True, validate=validate_fullname)
-    district = fields.Str(required=True, validate=validate_fullname)
+    father_name = fields.Str(required=True, validate=lambda p: validate_fullname(val=p, name="Father name"))
+    mother_name = fields.Str(required=True, validate=lambda p: validate_fullname(val=p, name="Mother name"))
+    district = fields.Str(required=True, validate=lambda p: validate_fullname(val=p, name="District name"))
     landline_number = fields.Str(required=True, validate=validate_number)
 
 
