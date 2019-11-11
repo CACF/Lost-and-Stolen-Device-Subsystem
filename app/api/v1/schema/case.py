@@ -17,6 +17,8 @@ from marshmallow import fields, Schema, pre_dump
 from .validations import *
 from flask_babel import _
 
+from datetime import datetime
+
 
 class CaseDetailsSchema(Schema):
     """Case details"""
@@ -157,32 +159,34 @@ class SearchResponseSchema(Schema):
     personal_details = fields.Dict(attribute='personal_details')
     creator = fields.Dict(attribute='creator')
     device_details = fields.Dict(attribute='device_details')
+    comments = fields.List(fields.Dict(), attribute='comments')
 
     @pre_dump
     def serialize_data(self, data):
+        data = data['_source']
         data['status'] = _(data.get('status'))
-        data['updated_at'] = data['updated_at'].strftime("%Y-%m-%d %H:%M:%S")
-        data['incident_details'] = {
-            "incident_date": data.get('date_of_incident'),
-            "incident_nature": _(data.get('incident'))
-        }
-        data['personal_details'] = {
-            "full_name": data.get('full_name'),
-            "dob": data.get('dob'),
-            "address": data.get('address'),
-            "gin": data.get('gin'),
-            "number": data.get('alternate_number'),
-            "email": data.get('email')
-        }
-        data['device_details'] = {
-            "brand": data.get('brand'),
-            "model_name": data.get('model'),
-            "description": data.get('description'),
-            "imeis": data.get('imeis').split(','),
-            "msisdns": data.get('msisdns').split(',')
-        }
-        data['creator'] = {
-            "user_id": data.get('user_id'),
-            "username": data.get('username')
-        }
+        data['updated_at'] = datetime.strptime(data['updated_at'], '%Y-%m-%dT%H:%M:%S.%f').strftime("%Y-%m-%d %H:%M:%S")
+        # data['incident_details'] = {
+        #     "incident_date": data.get('date_of_incident'),
+        #     "incident_nature": _(data.get('incident'))
+        # }
+        # data['personal_details'] = {
+        #     "full_name": data.get('full_name'),
+        #     "dob": data.get('dob'),
+        #     "address": data.get('address'),
+        #     "gin": data.get('gin'),
+        #     "number": data.get('alternate_number'),
+        #     "email": data.get('email')
+        # }
+        # data['device_details'] = {
+        #     "brand": data.get('brand'),
+        #     "model_name": data.get('model'),
+        #     "description": data.get('description'),
+        #     "imeis": data.get('imeis').split(','),
+        #     "msisdns": data.get('msisdns').split(',')
+        # }
+        # data['creator'] = {
+        #     "user_id": data.get('user_id'),
+        #     "username": data.get('username')
+        # }
         return data

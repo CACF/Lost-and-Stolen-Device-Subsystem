@@ -22,6 +22,7 @@ from flask_apispec import use_kwargs, MethodResource, doc
 from ..assets.response import MIME_TYPES, CODES
 from ..assets.pagination import Pagination
 from ..schema.case import SearchSchema, SearchResponseSchema
+from ..models.eshelper import ElasticSearchResource
 
 
 class Search(MethodResource):
@@ -138,3 +139,54 @@ class Search(MethodResource):
             return response
         finally:
             db.session.close()
+
+
+class ES_Search(MethodResource):
+
+    @doc(description='Search cases', tags=['Search'])
+    @use_kwargs(SearchSchema().fields_dict, locations=['json'])
+    def post(self, **kwargs):
+        """Return search results."""
+        request_data = kwargs.get("search_args")
+        try:
+            result = ElasticSearchResource.search_doc(request_data)
+            response = ES_Search.get_es_results(kwargs, result)
+            return response
+        except Exception as e:
+            app.logger.exception(e)
+            data = {
+                "start": kwargs.get('start', 1),
+                "previous": "",
+                "next": "",
+                "cases": [],
+                "count": 0,
+                "limit": kwargs.get('limit', 2),
+                "message": _("service unavailable")
+            }
+            response = Response(json.dumps(data), status=CODES.get("SERVICE_UNAVAILABLE"),
+                                mimetype=MIME_TYPES.get('APPLICATION_JSON'))
+            return response
+
+
+    @staticmethod
+    def get_es_results(kwargs, data):
+        """paginate retrieved search data."""
+        if data['hits']['hits']:  # if reported cases are resent in database
+            paginated_data = Pagination.get_paginated_list(data['hits']['hits'], '/search', start=kwargs.get('start', 1),
+                                                           limit=kwargs.get('limit', 3))
+            print(paginated_data)
+            paginated_data['cases'] = SearchResponseSchema(many=True).dump(paginated_data['cases']).data
+            response = Response(json.dumps(paginated_data, default=str), status=CODES.get("OK"),
+                                mimetype=MIME_TYPES.get('APPLICATION_JSON'))
+        else:  # if database has no reported cases
+            data = {
+                "start": kwargs.get('start', 1),
+                "previous": "",
+                "next": "",
+                "cases": [],
+                "count": 0,
+                "limit": kwargs.get('limit', 2)
+            }
+            response = Response(json.dumps(data, default=str), status=CODES.get("OK"),
+                                mimetype=MIME_TYPES.get('APPLICATION_JSON'))
+        return response

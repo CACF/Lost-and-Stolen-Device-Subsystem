@@ -16,6 +16,7 @@ NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS 
 # noinspection PyProtectedMember
 from sqlalchemy.orm.collections import InstrumentedList
 from sqlalchemy import or_, and_
+from datetime import datetime
 from app import db
 # noinspection PyUnresolvedReferences
 from ..models.caseincidentdetails import CaseIncidentDetails
@@ -28,6 +29,9 @@ from ..models.deviceimei import DeviceImei
 # noinspection PyUnresolvedReferences
 from ..models.casecomments import CaseComments
 from ..assets.response import CODES
+
+from .eshelper import ElasticSearchResource
+
 
 class Case(db.Model):
     """Case database model"""
@@ -140,6 +144,7 @@ class Case(db.Model):
                     CasePersonalDetails.add(personal_details, case.id)
 
                     db.session.commit()
+                    ElasticSearchResource.insert_doc(args, case.tracking_id, "Pending")
                     return {"code": CODES.get('OK'), "data": case.tracking_id}
                 else:
                     return {"code": CODES.get('BAD_REQUEST')}
@@ -148,7 +153,6 @@ class Case(db.Model):
             db.session.rollback()
             raise Exception
         finally:
-            print(db.session.execute('select current_role;').first())
             db.session.close()
 
     @classmethod
@@ -158,6 +162,7 @@ class Case(db.Model):
             case = cls.query.filter_by(tracking_id=tracking_id).first()
             case.updated_at = db.func.now()
             db.session.commit()
+            ElasticSearchResource.update_doc(case.tracking_id, {"doc" : {"updated_at": datetime.now()}})
         except Exception:
             db.session.rollback()
             raise Exception
@@ -170,6 +175,7 @@ class Case(db.Model):
             case.get_blocked = args["get_blocked"] if args.get("get_blocked") is not None else case.get_blocked
             db.session.add(case)
             db.session.commit()
+            ElasticSearchResource.update_doc(case.tracking_id, {"doc": {"get_blocked": args.get('get_blocked')}})
         except Exception:
             db.session.rollback()
             raise Exception
@@ -199,6 +205,7 @@ class Case(db.Model):
                         Case.update_case(tracking_id)
 
                         db.session.commit()
+                        ElasticSearchResource.update_doc(case.tracking_id, {"doc": {"personal_details": personal_details}})
                         return case.tracking_id
                     else:
                         return CODES.get('BAD_REQUEST')
@@ -232,6 +239,10 @@ class Case(db.Model):
                     Case.update_case(tracking_id)
 
                     db.session.commit()
+                    ElasticSearchResource.insert_comments(comment=status_args.get('case_comment'),
+                                                          userid=status_args.get('user_id'),
+                                                          username=status_args.get('username'),
+                                                          tracking_id=case.tracking_id)
                     return case.tracking_id
                 else:
                     return CODES.get('NOT_ACCEPTABLE')
@@ -257,6 +268,11 @@ class Case(db.Model):
                             case.case_status = args.get('case_status')
                             CaseComments.add(args.get('case_comment'), case.id, args.get('user_id'), args.get('username'))
                             db.session.commit()
+                            ElasticSearchResource.update_doc(case.tracking_id, {"status": "Recovered"})
+                            ElasticSearchResource.insert_comments(comment=args.get('case_comment'),
+                                                                  userid=args.get('user_id'),
+                                                                  username=args.get('username'),
+                                                                  tracking_id=case.tracking_id)
                             return case.tracking_id
                         else:
                             return CODES.get('CONFLICT')
@@ -268,6 +284,11 @@ class Case(db.Model):
                             case.case_status = args.get('case_status')
                             CaseComments.add(args.get('case_comment'), case.id, args.get('user_id'), args.get('username'))
                             db.session.commit()
+                            ElasticSearchResource.update_doc(case.tracking_id, {"status": "Recovered" if args.get('case_status')==1 else "Blocked" if args.get('case_status')==2 else "Pending"})
+                            ElasticSearchResource.insert_comments(comment=args.get('case_comment'),
+                                                                  userid=args.get('user_id'),
+                                                                  username=args.get('username'),
+                                                                  tracking_id=case.tracking_id)
                             return case.tracking_id
                         else:
                             return CODES.get('CONFLICT')

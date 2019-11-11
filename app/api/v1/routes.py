@@ -18,7 +18,7 @@ from .resources.common import BaseRoutes
 from .resources.admin import FetchImei, FetchMsisdn
 from .resources.system import IncidentNature, CaseStatus
 from .resources.case import CaseRoutes, CaseList, InsertCase, UpdateCase
-from .resources.search import Search
+from .resources.search import Search, ES_Search
 
 # noinspection PyUnresolvedReferences
 from .assets.error_handlers import *
@@ -48,6 +48,8 @@ api.add_resource(UpdateCase, '/update_case/<tracking_id>')
 api.add_resource(CaseList, '/cases')
 # noinspection PyTypeChecker
 api.add_resource(Search, '/search')
+# noinspection PyTypeChecker
+api.add_resource(ES_Search, '/es_search')
 
 docs = apidoc.init_doc()
 
@@ -55,7 +57,7 @@ docs = apidoc.init_doc()
 def register():
     """Method to register routes for docs."""
     for route in [BaseRoutes, FetchImei, FetchMsisdn, IncidentNature, CaseStatus, CaseList, Search,
-                  CaseRoutes, InsertCase, UpdateCase]:
+                  CaseRoutes, InsertCase, UpdateCase, ES_Search]:
         docs.register(route)
 
 
