@@ -15,28 +15,33 @@ NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS 
 
 from elasticsearch import Elasticsearch
 from datetime import datetime, timedelta
+from app import app
 
-es=Elasticsearch([{'host':'localhost','port':9200}])
+es=Elasticsearch([{'host': app.config['dev_config']['ELASTIC_SEARCH']['Host'],
+                   'port': app.config['dev_config']['ELASTIC_SEARCH']['Port']}])
 
 
 class ElasticSearchResource:
 
     @staticmethod
-    def insert_doc(document, tracking_id, status):
-        new_doc = {
-            "device_details": document['device_details'],
-            "incident_details": document['incident_details'],
-            "get_blocked": document['case_details']['get_blocked'],
-            "updated_at": datetime.now(),
-            "created_at": datetime.now(),
-            "personal_details": document['personal_details'],
-            "tracking_id": tracking_id,
-            "creator": document['loggedin_user'],
-            "status": status,
-            "comments": []
-        }
-        es.index(index='lsds', id=new_doc['tracking_id'], body=new_doc)
-        return None
+    def insert_doc(document):
+        try:
+            new_doc = {
+                "device_details": document['device_details'],
+                "incident_details": document['incident_details'],
+                "get_blocked": document['get_blocked'],
+                "updated_at": document['updated_at'],
+                "created_at": document['created_at'],
+                "personal_details": document['personal_details'],
+                "tracking_id": document['tracking_id'],
+                "creator": document['creator'],
+                "status": document['status'],
+                "comments": document['comments']
+            }
+            es.index(index='lsds', id=document['tracking_id'], body=new_doc)
+            return None
+        except Exception as e:
+            raise e
 
     @staticmethod
     def insert_comments(comment, userid, username, tracking_id):
@@ -45,7 +50,7 @@ class ElasticSearchResource:
                 "source": "ctx._source.comments.add(params.comments)",
                 "lang": "painless",
                 "params" : {
-                    "comments" : {
+                    "comments": {
                         "user_id": userid,
                         "username": username.strip(),
                         "comment": comment.strip(),
@@ -86,18 +91,5 @@ class ElasticSearchResource:
                     query['query']['bool']['must'].append({"match": {"incident_details."+field: doc_to_search[field]}})
                 else:
                     query['query']['bool']['must'].append({"match": {field: doc_to_search[field]}})
-        print(query)
         resp = es.search(index='lsds', body=query)
         return resp
-
-
-""" Testing """
-
-# ElasticSearchResource.update_doc("IamID123", {"doc": {"personal_details": {"gin" : "1234567880", "address" : "N/A",
-#                                                                            "dob" : "2000-09-07", "number" : "N/A",
-#                                                                            "full_name" : "test user", "email" : "N/A"}}})
-# print(ElasticSearchResource.get_doc("IamID123"))
-#
-# print(ElasticSearchResource.search_doc({"status":"recovered", "imeis":['37006822010201']}))
-#
-#

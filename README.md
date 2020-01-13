@@ -139,3 +139,9 @@ make test
 ```bash
 make lint
 ```
+
+* Export postgresql data to elastic search
+
+```bash
+make es-data-migration
+```

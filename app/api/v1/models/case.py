@@ -144,7 +144,8 @@ class Case(db.Model):
                     CasePersonalDetails.add(personal_details, case.id)
 
                     db.session.commit()
-                    ElasticSearchResource.insert_doc(args, case.tracking_id, "Pending")
+                    case = Case.query.filter_by(tracking_id=case.tracking_id).first()
+                    ElasticSearchResource.insert_doc(case.serialize, case.tracking_id, "Pending")
                     return {"code": CODES.get('OK'), "data": case.tracking_id}
                 else:
                     return {"code": CODES.get('BAD_REQUEST')}

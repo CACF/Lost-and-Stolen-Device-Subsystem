@@ -66,3 +66,6 @@ test:
 	pip3 install webargs==3.0.1
 	pip3 install -r test_requirements.txt
 	pytest -v
+
+es-data-migration:
+	python3 manage.py MigrateData

@@ -195,10 +195,10 @@ class CaseList(MethodResource):
                 comment = json.loads(comment)
                 if comment.get('id'):
                     comment_list.append({
-                        'comment': comment.get('comment'),
-                        'user_id': comment.get('user_id'),
-                        'username': comment.get('username'),
-                        'comment_date': comment.get('comment_date').split(' ', 1)[0]
+                        "comment": comment.get('comment'),
+                        "user_id": comment.get('user_id'),
+                        "username": comment.get('username'),
+                        "comment_date": comment.get('comment_date').split(' ', 1)[0]
                     })
             case_detail = {
                     "get_blocked": case.get('get_blocked'),

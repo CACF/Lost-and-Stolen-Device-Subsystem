@@ -24,6 +24,7 @@ from app.api.v1.models import *
 from app.api.v1.seeders.seeder import Seeds
 from app import app, db
 from scripts.stolen_list import GenList
+from scripts.data_migration import DataMigration
 
 migrate = Migrate(app, db)
 manager = Manager(app)
@@ -133,6 +134,11 @@ def genlist():
 @manager.command
 def GenFullList():
     return GenList.get_full_list()
+
+
+@manager.command
+def MigrateData():
+    return DataMigration.bulk_insert()
 
 
 if __name__ == '__main__':
