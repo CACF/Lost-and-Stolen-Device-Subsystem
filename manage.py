@@ -21,6 +21,7 @@ from flask_migrate import Migrate, MigrateCommand
 
 # noinspection PyUnresolvedReferences
 from app.api.v1.models import *
+from app.api.v1.models.eshelper import ElasticSearchResource
 from app.api.v1.seeders.seeder import Seeds
 from app import app, db
 from scripts.stolen_list import GenList
@@ -135,10 +136,18 @@ def genlist():
 def GenFullList():
     return GenList.get_full_list()
 
+@manager.command
+def CreateIndex():
+    return ElasticSearchResource.create_index()
+
+
+@manager.command
+def MigrateDataBulk():
+    return DataMigration.bulk_insert()
 
 @manager.command
 def MigrateData():
-    return DataMigration.bulk_insert()
+    return DataMigration.single_insert()
 
 
 if __name__ == '__main__':

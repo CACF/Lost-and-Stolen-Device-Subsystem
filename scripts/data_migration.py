@@ -13,9 +13,9 @@ Redistribution and use in source and binary forms, with or without modification,
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                                                               #
 """
 
+from app import db
 from app.api.v1.resources.case import CaseList
 from app.api.v1.models.eshelper import es
-from app import db
 
 
 class DataMigration:
@@ -43,19 +43,50 @@ class DataMigration:
                             new_case[k] = v
                 else:
                     new_case[k] = v
-            new_list.append({"index": {"_index": "lsds", "_type": "doc", "_id": new_case['tracking_id']}})
+            new_list.append({"index": {"_index": "lsds", "_type": "_doc", "_id": new_case['tracking_id']}})
             new_list.append(new_case)
         return new_list
+
+    @staticmethod
+    def clean_data_send(case):
+        new_case = {}
+        for k, v in case.items():
+            if isinstance(v, dict):
+                for x, y in v.items():
+                    if isinstance(y, str):
+                        v[x] = y.replace("\r\n", "").replace("\n", "")
+                        new_case[k] = v
+                    else:
+                        v[x] = y
+                        new_case[k] = v
+            else:
+                new_case[k] = v
+        return new_case
 
     @staticmethod
     def gendata(new_list):
         for word in new_list:
             yield word
 
+    @staticmethod
+    def chunks(lst, n):
+        """Yield successive n-sized chunks from lst."""
+        for i in range(0, len(lst), n):
+            yield lst[i:i + n]
 
     @staticmethod
     def bulk_insert():
         cases = DataMigration.fetch_data()
-        new_list = DataMigration.clean_data(cases)
-        es.bulk(DataMigration.gendata(new_list))
-        return str(len(new_list))+" records migrated successfully."
+        chunked_cases = DataMigration.chunks(cases, 1000)
+        for chunk in chunked_cases:
+            new_list = DataMigration.clean_data(chunk)
+            es.bulk(DataMigration.gendata(new_list), request_timeout=1000)
+        return str(len(cases))+" records migrated successfully."
+
+    @staticmethod
+    def single_insert():
+        cases = DataMigration.fetch_data()
+        for i, case in enumerate(cases):
+            cleaned_case = DataMigration.clean_data_send(case)
+            es.index(index='lsds', id=cleaned_case['tracking_id'], body=cleaned_case)
+        return str(len(cases)) + " inserted successfully."

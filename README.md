@@ -139,9 +139,22 @@ make test
 ```bash
 make lint
 ```
+###Elastic Search Commands
+
+* Create elastic search index
+
+```bash
+make create-index
+```
+
+* Bulk export postgresql data to elastic search
+
+```bash
+make migrate-data-bulk
+```
 
 * Export postgresql data to elastic search
 
 ```bash
-make es-data-migration
+make migrate-data
 ```

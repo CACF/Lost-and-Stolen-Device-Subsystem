@@ -67,5 +67,11 @@ test:
 	pip3 install -r test_requirements.txt
 	pytest -v
 
-es-data-migration:
+migrate-data:
 	python3 manage.py MigrateData
+
+migrate-data-bulk:
+	python3 manage.py MigrateDataBulk
+
+create-index:
+	python3 manage.py CreateIndex

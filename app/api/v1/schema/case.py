@@ -149,7 +149,7 @@ class SearchSchema(Schema):
         return self._declared_fields
 
 
-class SearchResponseSchema(Schema):
+class SearchResponseSchemaES(Schema):
     """Search response schema."""
     tracking_id = fields.Str(attribute='tracking_id')
     status = fields.Str(attribute='status')
@@ -165,28 +165,44 @@ class SearchResponseSchema(Schema):
     def serialize_data(self, data):
         data = data['_source']
         data['status'] = _(data.get('status'))
-        data['updated_at'] = datetime.strptime(data['updated_at'], '%Y-%m-%dT%H:%M:%S.%f').strftime("%Y-%m-%d %H:%M:%S")
-        # data['incident_details'] = {
-        #     "incident_date": data.get('date_of_incident'),
-        #     "incident_nature": _(data.get('incident'))
-        # }
-        # data['personal_details'] = {
-        #     "full_name": data.get('full_name'),
-        #     "dob": data.get('dob'),
-        #     "address": data.get('address'),
-        #     "gin": data.get('gin'),
-        #     "number": data.get('alternate_number'),
-        #     "email": data.get('email')
-        # }
-        # data['device_details'] = {
-        #     "brand": data.get('brand'),
-        #     "model_name": data.get('model'),
-        #     "description": data.get('description'),
-        #     "imeis": data.get('imeis').split(','),
-        #     "msisdns": data.get('msisdns').split(',')
-        # }
-        # data['creator'] = {
-        #     "user_id": data.get('user_id'),
-        #     "username": data.get('username')
-        # }
+        return data
+
+
+class SearchResponseSchema(Schema):
+    """Search response schema."""
+    tracking_id = fields.Str(attribute='tracking_id')
+    status = fields.Str(attribute='status')
+    updated_at = fields.Str(attribute='updated_at')
+    get_blocked = fields.Boolean(attribute='get_blocked')
+    incident_details = fields.Dict(attribute='incident_details')
+    personal_details = fields.Dict(attribute='personal_details')
+    creator = fields.Dict(attribute='creator')
+    device_details = fields.Dict(attribute='device_details')
+    comments = fields.List(fields.Dict(), attribute='comments')
+
+    @pre_dump
+    def serialize_data(self, data):
+        data['incident_details'] = {
+            "incident_date": data.get('date_of_incident'),
+            "incident_nature": _(data.get('incident'))
+        }
+        data['personal_details'] = {
+            "full_name": data.get('full_name'),
+            "dob": data.get('dob'),
+            "address": data.get('address'),
+            "gin": data.get('gin'),
+            "number": data.get('alternate_number'),
+            "email": data.get('email')
+        }
+        data['device_details'] = {
+            "brand": data.get('brand'),
+            "model_name": data.get('model'),
+            "description": data.get('description'),
+            "imeis": data.get('imeis').split(','),
+            "msisdns": data.get('msisdns').split(',')
+        }
+        data['creator'] = {
+            "user_id": data.get('user_id'),
+            "username": data.get('username')
+        }
         return data

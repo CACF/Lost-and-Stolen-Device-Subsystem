@@ -21,7 +21,7 @@ from flask_babel import _
 from flask_apispec import use_kwargs, MethodResource, doc
 from ..assets.response import MIME_TYPES, CODES
 from ..assets.pagination import Pagination
-from ..schema.case import SearchSchema, SearchResponseSchema
+from ..schema.case import SearchSchema, SearchResponseSchema, SearchResponseSchemaES
 from ..models.eshelper import ElasticSearchResource
 
 
@@ -148,8 +148,10 @@ class ES_Search(MethodResource):
     def post(self, **kwargs):
         """Return search results."""
         request_data = kwargs.get("search_args")
+        limit = kwargs.get('limit')
+        start = kwargs.get('start')
         try:
-            result = ElasticSearchResource.search_doc(request_data)
+            result = ElasticSearchResource.search_doc(request_data, limit, start)
             response = ES_Search.get_es_results(kwargs, result)
             return response
         except Exception as e:
@@ -174,8 +176,7 @@ class ES_Search(MethodResource):
         if data['hits']['hits']:  # if reported cases are resent in database
             paginated_data = Pagination.get_paginated_list(data['hits']['hits'], '/search', start=kwargs.get('start', 1),
                                                            limit=kwargs.get('limit', 3))
-            print(paginated_data)
-            paginated_data['cases'] = SearchResponseSchema(many=True).dump(paginated_data['cases']).data
+            paginated_data['cases'] = SearchResponseSchemaES(many=True).dump(paginated_data['cases']).data
             response = Response(json.dumps(paginated_data, default=str), status=CODES.get("OK"),
                                 mimetype=MIME_TYPES.get('APPLICATION_JSON'))
         else:  # if database has no reported cases
