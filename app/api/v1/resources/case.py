@@ -169,6 +169,14 @@ class CaseRoutes(MethodResource):
         try:
             case_id = Case.update_status(args, tracking_id)
 
+            if case_id == 401:
+                data = {
+                    'message': _('Only admins can update case status.'),
+                }
+                response = Response(json.dumps(data), status=CODES.get("UNAUTHORIZED"),
+                                    mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+                return response
+
             if case_id == 406:
                 data = {
                         'message': _('Unable to update case status. Either Blocking is disabled or case has already been recovered.'),

@@ -52,12 +52,14 @@ class CaseIncidentDetails(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date_of_incident = db.Column(db.String(80))
     nature_of_incident = db.Column(db.Integer, db.ForeignKey('nature_of_incident.id'))
+    region_of_incident = db.Column(db.String(100))
     case_id = db.Column(db.Integer, db.ForeignKey('case.id',  ondelete='CASCADE'))
 
     def __init__(self, args, case_id):
         """Constructor"""
         self.date_of_incident = args.get("incident_date")
         self.nature_of_incident = args.get("incident_nature")
+        self.region_of_incident = args.get("region")
         self.case_id = case_id
 
     @property
@@ -65,7 +67,8 @@ class CaseIncidentDetails(db.Model):
         """Serialize data."""
         return {
             'incident_date': self.date_of_incident if self.date_of_incident else 'N/A',
-            'incident_nature': self.natureofincident.serialize
+            'incident_nature': self.natureofincident.serialize,
+            'region': self.region_of_incident
         }
 
     @classmethod

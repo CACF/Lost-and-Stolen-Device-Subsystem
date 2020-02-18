@@ -64,6 +64,8 @@ api.add_resource(BaseRoutes, '/')
 # noinspection PyTypeChecker
 api.add_resource(FetchImei, '/imei/<imei>')
 # noinspection PyTypeChecker
+api.add_resource(FetchMsisdn, '/msisdn/<msisdn>')
+# noinspection PyTypeChecker
 api.add_resource(IncidentNature, '/incident_types')
 # noinspection PyTypeChecker
 api.add_resource(CaseStatus, '/status_types')
@@ -83,7 +85,7 @@ docs = apidoc.init_doc()
 
 def register():
     """Method to register routes for docs."""
-    for route in [BaseRoutes, FetchImei, IncidentNature, CaseStatus, CaseList, Search,
+    for route in [BaseRoutes, FetchImei, FetchMsisdn, IncidentNature, CaseStatus, CaseList, Search,
                   CaseRoutes, InsertCase, UpdateCase]:
         docs.register(route)
 

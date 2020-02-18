@@ -58,6 +58,7 @@ class UserSchema(Schema):
     """User schema."""
     user_id = fields.Str(required=True)
     username = fields.Str(required=True, validate=validate_username)
+    role = fields.Str(required=True)
     case_comment = fields.Str(required=True, validate=validate_comment)
     case_status = fields.Int(required=True, validate=lambda p: p == 1 or p == 2 or p == 3)
 
@@ -80,6 +81,7 @@ class IncidentDetailsSchema(Schema):
     """Incident details schema."""
     incident_date = fields.Str(required=True, validate=validate_date)
     incident_nature = fields.Int(required=True, validate=lambda p: p == 1 or p == 2)
+    region = fields.Str(required=True)
 
 
 class DeviceDetailsSchema(Schema):
@@ -94,7 +96,7 @@ class DeviceDetailsSchema(Schema):
 class CaseInsertSchema(Schema):
     """Case Insertion schema."""
     case_details = fields.Nested(CaseDetailsSchema)
-    loggedin_user = fields.Nested(UserSchema, only=['username', 'user_id'])
+    loggedin_user = fields.Nested(UserSchema, only=['username', 'user_id', 'role'])
     incident_details = fields.Nested(IncidentDetailsSchema)
     personal_details = fields.Nested(PersonalDetailsSchema)
     device_details = fields.Nested(DeviceDetailsSchema)
@@ -107,7 +109,7 @@ class CaseInsertSchema(Schema):
 
 class CaseUpdateSchema(Schema):
     """Update case schema."""
-    status_args = fields.Nested(UserSchema, only=['username', 'user_id', 'case_comment'], required=True)
+    status_args = fields.Nested(UserSchema, only=['username', 'user_id', 'case_comment', 'role'], required=True)
     personal_details = fields.Nested(PersonalDetailsSchema)
     case_details = fields.Nested(CaseDetailsSchema)
 
@@ -119,7 +121,7 @@ class CaseUpdateSchema(Schema):
 
 class CaseGetBlockedSchema(Schema):
     """Update case schema."""
-    status_args = fields.Nested(UserSchema, only=['username', 'user_id', 'case_comment'], required=True)
+    status_args = fields.Nested(UserSchema, only=['username', 'user_id', 'case_comment', 'role'], required=True)
     case_details = fields.Nested(CaseDetailsSchema)
 
     @property

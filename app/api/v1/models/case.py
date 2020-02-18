@@ -65,6 +65,7 @@ class Case(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.String(100))
     username = db.Column(db.String(1000))
+    user_role = db.Column(db.String(20))
     case_status = db.Column(db.Integer, db.ForeignKey('status.id'))
     tracking_id = db.Column(db.String(64))  # Generate unique case tracking id
     created_at = db.Column(db.DateTime, server_default=db.func.now())
@@ -80,6 +81,7 @@ class Case(db.Model):
         """Constructor."""
         self.user_id = args.get("loggedin_user").get("user_id")
         self.username = args.get("loggedin_user").get("username")
+        self.user_role = args.get("loggedin_user").get("role")
         self.case_status = case_status
         self.get_blocked = args.get("case_details").get("get_blocked")
 
@@ -277,34 +279,37 @@ class Case(db.Model):
     def update_status(cls, args, tracking_id):
         """Update status."""
         try:
-            trigger = 'SET ROLE case_user; COMMIT;'
-            db.session.execute(trigger)
-            case = cls.query.filter_by(tracking_id=tracking_id).first()
-            if case:
-                if case.get_blocked:
-                    if (case.case_status == 2 and args.get('case_status') != 3) or (case.case_status == 3):
-                        if case.case_status != args.get('case_status'):
-                            case.case_status = args.get('case_status')
-                            CaseComments.add(args.get('case_comment'), case.id, args.get('user_id'), args.get('username'))
-                            db.session.commit()
-                            return case.tracking_id
+            if args.get('role') == "admin":
+                trigger = 'SET ROLE case_user; COMMIT;'
+                db.session.execute(trigger)
+                case = cls.query.filter_by(tracking_id=tracking_id).first()
+                if case:
+                    if case.get_blocked:
+                        if (case.case_status == 2 and args.get('case_status') != 3) or (case.case_status == 3):
+                            if case.case_status != args.get('case_status'):
+                                case.case_status = args.get('case_status')
+                                CaseComments.add(args.get('case_comment'), case.id, args.get('user_id'), args.get('username'))
+                                db.session.commit()
+                                return case.tracking_id
+                            else:
+                                return CODES.get('CONFLICT')
                         else:
-                            return CODES.get('CONFLICT')
+                            return CODES.get('NOT_ACCEPTABLE')
                     else:
-                        return CODES.get('NOT_ACCEPTABLE')
+                        if case.case_status == 3 and args.get('case_status') != 2:
+                            if case.case_status != args.get('case_status'):
+                                case.case_status = args.get('case_status')
+                                CaseComments.add(args.get('case_comment'), case.id, args.get('user_id'), args.get('username'))
+                                db.session.commit()
+                                return case.tracking_id
+                            else:
+                                return CODES.get('CONFLICT')
+                        else:
+                            return CODES.get('NOT_ACCEPTABLE')
                 else:
-                    if case.case_status == 3 and args.get('case_status') != 2:
-                        if case.case_status != args.get('case_status'):
-                            case.case_status = args.get('case_status')
-                            CaseComments.add(args.get('case_comment'), case.id, args.get('user_id'), args.get('username'))
-                            db.session.commit()
-                            return case.tracking_id
-                        else:
-                            return CODES.get('CONFLICT')
-                    else:
-                        return CODES.get('NOT_ACCEPTABLE')
+                    return None
             else:
-                return None
+                return CODES.get('UNAUTHORIZED')
         except Exception:
             db.session.rollback()
             raise Exception
