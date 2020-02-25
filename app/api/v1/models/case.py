@@ -1,52 +1,22 @@
 """
- SPDX-License-Identifier: BSD-4-Clause-Clear
+Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+All rights reserved.
+Redistribution and use in source and binary forms, with or without modification, are permitted (subject to the limitations in the disclaimer below) provided that the following conditions are met:
 
- Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+    Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+    Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+    Neither the name of Qualcomm Technologies, Inc. nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+    The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
+    Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+    This notice may not be removed or altered from any source distribution.
 
- All rights reserved.
-
- Redistribution and use in source and binary forms, with or without modification, are permitted (subject to the
- limitations in the disclaimer below) provided that the following conditions are met:
-
- * Redistributions of source code must retain the above copyright notice, this list of conditions and the following
-   disclaimer.
- * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following
-   disclaimer in the documentation and/or other materials provided with the distribution.
- * All advertising materials mentioning features or use of this software, or any deployment of this software, or
-   documentation accompanying any distribution of this software, must display the trademark/logo as per the details
-   provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
- * Neither the name of Qualcomm Technologies, Inc. nor the names of its contributors may be used to endorse or promote
-   products derived from this software without specific prior written permission.
-
- SPDX-License-Identifier: ZLIB-ACKNOWLEDGEMENT
-
- Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
-
- This software is provided 'as-is', without any express or implied warranty. In no event will the authors be held liable
- for any damages arising from the use of this software.
-
- Permission is granted to anyone to use this software for any purpose, including commercial applications, and to alter
- it and redistribute it freely, subject to the following restrictions:
-
- * The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If
-   you use this software in a product, an acknowledgment is required by displaying the trademark/logo as per the details
-   provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
- * Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
- * This notice may not be removed or altered from any source distribution.
-
- NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
- THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
- BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- POSSIBILITY OF SUCH DAMAGE.                                                               #
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                                                               #
 """
 
 # noinspection PyProtectedMember
 from sqlalchemy.orm.collections import InstrumentedList
 from sqlalchemy import or_, and_
+from datetime import datetime
 from app import db
 # noinspection PyUnresolvedReferences
 from ..models.caseincidentdetails import CaseIncidentDetails
@@ -59,6 +29,9 @@ from ..models.deviceimei import DeviceImei
 # noinspection PyUnresolvedReferences
 from ..models.casecomments import CaseComments
 from ..assets.response import CODES
+
+from .eshelper import ElasticSearchResource
+
 
 class Case(db.Model):
     """Case database model"""
@@ -173,6 +146,8 @@ class Case(db.Model):
                     CasePersonalDetails.add(personal_details, case.id)
 
                     db.session.commit()
+                    case = Case.query.filter_by(tracking_id=case.tracking_id).first()
+                    ElasticSearchResource.insert_doc(case.serialize, case.tracking_id, "Pending")
                     return {"code": CODES.get('OK'), "data": case.tracking_id}
                 else:
                     return {"code": CODES.get('BAD_REQUEST')}
@@ -190,6 +165,7 @@ class Case(db.Model):
             case = cls.query.filter_by(tracking_id=tracking_id).first()
             case.updated_at = db.func.now()
             db.session.commit()
+            ElasticSearchResource.update_doc(case.tracking_id, {"doc" : {"updated_at": datetime.now()}})
         except Exception:
             db.session.rollback()
             raise Exception
@@ -202,6 +178,7 @@ class Case(db.Model):
             case.get_blocked = args["get_blocked"] if args.get("get_blocked") is not None else case.get_blocked
             db.session.add(case)
             db.session.commit()
+            ElasticSearchResource.update_doc(case.tracking_id, {"doc": {"get_blocked": args.get('get_blocked')}})
         except Exception:
             db.session.rollback()
             raise Exception
@@ -231,6 +208,7 @@ class Case(db.Model):
                         Case.update_case(tracking_id)
 
                         db.session.commit()
+                        ElasticSearchResource.update_doc(case.tracking_id, {"doc": {"personal_details": personal_details}})
                         return case.tracking_id
                     else:
                         return CODES.get('BAD_REQUEST')
@@ -264,6 +242,10 @@ class Case(db.Model):
                     Case.update_case(tracking_id)
 
                     db.session.commit()
+                    ElasticSearchResource.insert_comments(comment=status_args.get('case_comment'),
+                                                          userid=status_args.get('user_id'),
+                                                          username=status_args.get('username'),
+                                                          tracking_id=case.tracking_id)
                     return case.tracking_id
                 else:
                     return CODES.get('NOT_ACCEPTABLE')
@@ -290,6 +272,11 @@ class Case(db.Model):
                                 case.case_status = args.get('case_status')
                                 CaseComments.add(args.get('case_comment'), case.id, args.get('user_id'), args.get('username'))
                                 db.session.commit()
+                                ElasticSearchResource.update_doc(case.tracking_id, {"status": "Recovered"})
+                                ElasticSearchResource.insert_comments(comment=args.get('case_comment'),
+                                                                      userid=args.get('user_id'),
+                                                                      username=args.get('username'),
+                                                                      tracking_id=case.tracking_id)
                                 return case.tracking_id
                             else:
                                 return CODES.get('CONFLICT')
@@ -301,6 +288,13 @@ class Case(db.Model):
                                 case.case_status = args.get('case_status')
                                 CaseComments.add(args.get('case_comment'), case.id, args.get('user_id'), args.get('username'))
                                 db.session.commit()
+                                ElasticSearchResource.update_doc(case.tracking_id, {
+                                    "status": "Recovered" if args.get('case_status') == 1 else "Blocked" if args.get(
+                                        'case_status') == 2 else "Pending"})
+                                ElasticSearchResource.insert_comments(comment=args.get('case_comment'),
+                                                                      userid=args.get('user_id'),
+                                                                      username=args.get('username'),
+                                                                      tracking_id=case.tracking_id)
                                 return case.tracking_id
                             else:
                                 return CODES.get('CONFLICT')
