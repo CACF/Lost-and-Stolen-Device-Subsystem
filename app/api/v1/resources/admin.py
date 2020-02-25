@@ -54,7 +54,7 @@ from flask_babel import _
 
 from ..assets.response import MIME_TYPES, CODES
 from ..requests.args_validation import validate_imei, validate_msisdn
-from .common_resources import CommonResources
+from app.api.v1.helpers.common_resources import CommonResources
 
 
 class FetchImei(MethodResource):

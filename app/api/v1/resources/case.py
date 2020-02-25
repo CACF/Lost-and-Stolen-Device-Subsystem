@@ -53,6 +53,7 @@ from ..models.case import Case
 from ..assets.pagination import Pagination
 from ..schema.case import CaseInsertSchema, CaseStatusUpdateSchema, CaseUpdateSchema, CasesSchema, CaseGetBlockedSchema
 from ..schema.validations import *
+from ..helpers.common_resources import CommonResources
 
 from flask import Response
 from sqlalchemy import desc
@@ -221,62 +222,6 @@ class CaseRoutes(MethodResource):
 class CaseList(MethodResource):
     """Flask resource to get list of cases."""
 
-    @staticmethod
-    def serialize(cases):
-        """Serialize response."""
-        case_list = []
-        for row in cases:
-            case_list.append(dict((col, val) for col, val in row.items()))
-        cases = []
-        for case in case_list:
-            comment_list = []
-            for comment in case.get('comments').split('|'):
-                comment = json.loads(comment)
-                if comment.get('id'):
-                    comment_list.append({
-                        'comment': comment.get('comment'),
-                        'user_id': comment.get('user_id'),
-                        'username': comment.get('username'),
-                        'comment_date': comment.get('comment_date').split(' ', 1)[0]
-                    })
-            case_detail = {
-                    "get_blocked": case.get('get_blocked'),
-                    "creator": {
-                        "user_id": case.get('user_id'),
-                        "username": case.get('username')
-                    },
-                    "personal_details": {
-                        "address": _(case.get('address')),
-                        "dob": _(case.get('dob')),
-                        "gin": _(case.get('gin')),
-                        "email": _(case.get('email')),
-                        "number": _(case.get('alternate_number')),
-                        "full_name": case.get('full_name'),
-                        "father_name": case.get('father_name'),
-                        "mother_name": case.get('mother_name'),
-                        "district": case.get('district')
-                    },
-                    "tracking_id": case.get('tracking_id'),
-                    "comments": comment_list,
-                    "incident_details": {
-                        "incident_date": case.get('date_of_incident'),
-                        "incident_nature": _(case.get('incident_type'))
-                    },
-                    "created_at": case.get('created_at').strftime("%Y-%m-%d %H:%M:%S"),
-                    "device_details": {
-                        "description": case.get('physical_description'),
-                        "model_name": case.get('model_name'),
-                        "imeis": case.get('imeis').split(','),
-                        "msisdns": case.get('msisdns').split(','),
-                        "brand": case.get('brand')
-                    },
-                    "status": _(case.get('status')),
-                    "updated_at": case.get('updated_at').strftime("%Y-%m-%d %H:%M:%S")
-                }
-
-            cases.append(case_detail)
-        return cases
-
     @doc(description='Get list of cases', tags=['Cases'])
     @use_kwargs(CasesSchema().fields_dict, locations=['query'])
     def get(self, **kwargs):
@@ -289,7 +234,7 @@ class CaseList(MethodResource):
                 db.session.execute(trigger)
                 sql = "select c.*, cid.date_of_incident, cid.nature_of_incident, cpd.full_name, cpd.address, cpd.alternate_number, cpd.dob, cpd.email, cpd.gin, cpd.father_name, cpd.mother_name, cpd.district, cpd.landline_number, dd.brand, dd.model_name, dd.physical_description, s.description as status, ni.name as incident_type, string_agg(distinct(di.imei::text), ', '::text) as imeis, string_agg(distinct(msisdn::text), ', '::text) as msisdns, string_agg(distinct(json_build_object('comment',cc.comments, 'comment_date',cc.comment_date, 'user_id',cc.user_id, 'username',cc.username, 'id',cc.id)::text), '| '::text) as comments from public.case as c left join case_comments as cc on cc.case_id=c.id, case_incident_details as cid, case_personal_details as cpd, device_details as dd, device_imei as di, device_msisdn as dm, public.status as s, public.nature_of_incident as ni where c.case_status="+str(status)+" and cid.case_id=c.id and cpd.case_id=c.id and dd.case_id=c.id and di.device_id=dd.id and dm.device_id=dd.id  and s.id=c.case_status and ni.id=cid.nature_of_incident group by c.id, cid.date_of_incident, cid.nature_of_incident, cpd.full_name, cpd.dob, cpd.alternate_number, cpd.address, cpd.email, cpd.gin,cpd.father_name, cpd.mother_name, cpd.district, cpd.landline_number, dd.brand, dd.model_name, dd.physical_description, s.description, ni.name order by c.updated_at desc"
                 cases = db.session.execute(sql)
-                cases = CaseList.serialize(cases)
+                cases = CommonResources.serialize_cases(cases)
                 if cases:
                     data = Pagination.get_paginated_list(cases, '/cases', start=kwargs.get('start', 1),
                                                          limit=kwargs.get('limit', 3))

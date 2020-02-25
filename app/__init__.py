@@ -53,6 +53,9 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_babel import Babel
 
+from celery import Celery
+from celery.schedules import crontab
+
 app = Flask(__name__)
 CORS(app)
 
@@ -60,6 +63,8 @@ try:
     config = configparser.ConfigParser()
     config.read("config.ini")
     app.config['dev_config'] = config
+
+    CeleryConf = app.config['system_config']['celery']
 
     global_config = yaml.safe_load(open("etc/config.yml"))
     app.config['system_config'] = global_config
@@ -85,6 +90,40 @@ try:
 
     db = SQLAlchemy()
     db.init_app(app)
+
+    # celery configurations
+    app.config['CELERY_BROKER_URL'] = CeleryConf['RabbitmqUrl']
+    app.config['result_backend'] = 'db+' + app.config['SQLALCHEMY_DATABASE_URI']  # CeleryConf['RabbitmqBackend']
+    app.config['broker_pool_limit'] = None
+
+    # register tasks
+    app.config['imports'] = CeleryConf['CeleryTasks']
+
+    # initialize celery
+    celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
+
+    # schedule task
+    celery.conf.beat_schedule = {
+        'delete-every-hour': {
+            'task': 'app.api.v1.helpers.tasks.CeleryTasks.delete_files',
+            'schedule': crontab(minute=0, hour='*/1')
+        },
+    }
+
+    # update configurations
+    celery.conf.update(app.config)
+    TaskBase = celery.Task
+
+
+    class ContextTask(TaskBase):
+        abstract = True
+
+        def __call__(self, *args, **kwargs):
+            with app.app_context():
+                return TaskBase.__call__(self, *args, **kwargs)
+
+
+    celery.Task = ContextTask
 
     app.config['BABEL_DEFAULT_LOCALE'] = global_config['language_support']['default']
     app.config['LANGUAGES'] = global_config['language_support']['languages']
