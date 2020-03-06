@@ -118,12 +118,14 @@ class Cplc(db.Model):
         """Update status."""
         try:
             case = cls.query.filter_by(imei=imei).first()
-            if case.case_status == 2:
-                case.case_status = 1
-                case.updated_at = db.func.now()
-                db.session.commit()
-            else:
-                return CODES.get('NOT_ACCEPTABLE')
+            if case:
+                if case.status == 2:
+                    case.status = 1
+                    case.updated_at = db.func.now()
+                    db.session.commit()
+                else:
+                    return CODES.get('NOT_ACCEPTABLE')
+
         except Exception:
             db.session.rollback()
             raise Exception

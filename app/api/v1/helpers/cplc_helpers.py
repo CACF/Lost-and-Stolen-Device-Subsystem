@@ -66,11 +66,14 @@ class CplcCommonResources:
         success_list = []
         for data in filtered_data:
             flag = Cplc.get_case(data['imei'])
-            if flag and flag.get('status')!=1:
-                failed_list.append({"imei": data['imei'], "status": "Already Exists and unblocked"})
+            if flag:
+                if flag.get('status') == 1:
+                    failed_list.append({"imei": data['imei'], "status": "Already unblocked"})
+                else:
+                    Cplc.update_status(data['imei'])
+                    success_list.append(data['imei'])
             else:
-                Cplc.update_status(data['imei'])
-                success_list.append(data['imei'])
+                failed_list.append({"imei": data['imei'], "status": "Does not exist"})
         return failed_list, success_list
 
     @staticmethod
