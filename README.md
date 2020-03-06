@@ -49,6 +49,7 @@ Postgresql Server). To setup the local environment, follow the section below:
 #### Setting up local dev environment
 For setting up a local dev environment we assume that the ```prerequisites``` are met already. To setup a local 
 environment:
+* Install elastic search in the system
 * Create database using Postgresql (Name and credentials should be same as in [config](tests/testdata/config_test.ini))
 * Create virtual environment using **virtualenv** and activate it:
 ```bash
@@ -59,6 +60,8 @@ source venv/bin/activate
 Make sure the virtual environment is made using python3
 
 * Create /lists folder in / directory
+
+* Create /UPLOADS folder in / directory
 
 * Replace sample configuration in config.ini to similar configurations in (tests/testdata/config_test.ini)
 
@@ -79,6 +82,12 @@ This will automatically create and migrate database schemas and requirements.
 * Compile multi language encoded files
 ```bash
 pybabel compile -d app/translations
+```
+
+* Start celery using:
+
+```bash
+make start-celery
 ```
 
 * Start LSDS development server using:

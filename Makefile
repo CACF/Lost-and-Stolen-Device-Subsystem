@@ -75,3 +75,8 @@ migrate-data-bulk:
 
 create-index:
 	python3 manage.py CreateIndex
+
+start-celery:
+	sudo apt-get install rabbitmq-server
+	rabbitmq-server start
+	celery -A app.celery worker --loglevel=info -B
