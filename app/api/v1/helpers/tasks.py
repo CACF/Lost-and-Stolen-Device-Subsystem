@@ -19,23 +19,27 @@ from celery.signals import task_postrun
 
 from app import celery, app, db
 from celery.result import AsyncResult
+from ..helpers.common_resources import CommonResources
+from ..helpers.cplc_helpers import CplcCommonResources
+from ..models.summary import Summary
 
 
 class CeleryTasks:
 
     @staticmethod
     @celery.task
-    def get_summary(imeis_list, invalid_imeis):
+    def block_all():
         """Celery task for bulk request processing."""
         try:
-            imeis_chunks = BulkCommonResources.chunked_data(imeis_list)
-            records, invalid_imeis, unprocessed_imeis = BulkCommonResources.start_threads(imeis_list=imeis_chunks,
-                                                                                          invalid_imeis=invalid_imeis)
+            cases = CommonResources.get_pending_cases()
+            total = len(cases)
             # send records for summary generation
             with app.request_context({'wsgi.url_scheme': "", 'SERVER_PORT': "", 'SERVER_NAME': "", 'REQUEST_METHOD': ""}):
-                response = BulkCommonResources.build_summary(records, invalid_imeis, unprocessed_imeis)
+                remaining_cases = CommonResources.get_seen_with(cases)
+                CommonResources.notify_users(remaining_cases)
 
-            return {"response": response, "task_id": celery.current_task.request.id}
+            return {"response": {"result": str(total-len(remaining_cases)) +" has been blocked, rest has been sent notified."},
+                    "task_id": celery.current_task.request.id}
         except Exception as e:
             app.logger.exception(e)
             return {"response": {}, "task_id": celery.current_task.request.id}
@@ -56,6 +60,35 @@ class CeleryTasks:
             Summary.update(input=input, status='FAILURE', response=response)
             return True
 
+    @staticmethod
+    @celery.task()
+    def cplc_block(file):
+        clean_data = CplcCommonResources.clean_data(file)
+        failed_list, success_list = CplcCommonResources.block(clean_data)
+        report = CplcCommonResources.generate_report(failed_list)
+        return {
+            "response": {
+                "success": len(success_list),
+                "failed": len(failed_list),
+                "report_name": report
+            },
+            "task_id": celery.current_task.request.id
+        }
+
+    @staticmethod
+    @celery.task()
+    def cplc_unblock(file):
+        clean_data = CplcCommonResources.clean_data(file)
+        failed_list, success_list = CplcCommonResources.unblock(clean_data)
+        report = CplcCommonResources.generate_report(failed_list)
+        return {
+            "response": {
+                "success": len(success_list),
+                "failed": len(failed_list),
+                "report_name": report
+            },
+            "task_id": celery.current_task.request.id
+        }
 
     @staticmethod
     @celery.task
@@ -66,7 +99,7 @@ class CeleryTasks:
             for f in os.listdir(app.config['dev_config']['UPLOADS']['report_dir']):  # list files in specific directory
                 creation_time = os.path.getctime(
                     os.path.join(app.config['dev_config']['UPLOADS']['report_dir'], f))  # get creation time of each file
-                if current_time - creation_time >= app.config['system_config']['global']['CompliantReportDeletionTime']*3600:  # compare creation time is greater than 24 hrs
+                if current_time - creation_time >= app.config['system_config']['global']['ReportDeletionTime']*3600:  # compare creation time is greater than 24 hrs
                     os.remove(os.path.join(app.config['dev_config']['UPLOADS']['report_dir'],
                                            f))  # if yes, delete file from directory
         except Exception as e:

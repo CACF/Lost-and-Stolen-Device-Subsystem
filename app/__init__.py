@@ -33,11 +33,11 @@ try:
     config.read("config.ini")
     app.config['dev_config'] = config
 
-    CeleryConf = app.config['system_config']['celery']
 
     global_config = yaml.safe_load(open("etc/config.yml"))
     app.config['system_config'] = global_config
 
+    CeleryConf = app.config['system_config']['celery']
     db_params = {
         'Host': app.config['dev_config']['Database']['Host'],
         'Port': app.config['dev_config']['Database']['Port'],

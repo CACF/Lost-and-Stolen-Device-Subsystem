@@ -220,3 +220,14 @@ class SearchResponseSchema(Schema):
             "username": data.get('username')
         }
         return data
+
+
+class CplcInsertSchema(Schema):
+    """Case Insertion schema."""
+    action = fields.Str(required=True, validate=lambda p: p == "block" or p == "unblock")
+    file = fields.Str(description="Submit tsv/txt file path containing bulk IMEIs")
+
+    @property
+    def fields_dict(self):
+        """Convert declared fields to dictionary."""
+        return self._declared_fields

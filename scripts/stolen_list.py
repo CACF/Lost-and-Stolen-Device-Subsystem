@@ -48,12 +48,35 @@ class GenList:
             return "Exception occurred while getting distinct imeis."
 
     @staticmethod
+    def get_distinct_cplc_imeis():
+        try:
+            app.logger.info("getting IMEIs from cplc.")
+            response_data = []  # distinct imeis list
+            done = set()  # set of distinct IMEIs
+            sql = "select status, created_at, imei, msisdn from public.cplc"
+            query = db.engine.execute(sql)  # retrieve imeis from case, device and imei models
+            for row in reversed(list(query)):  # iterate results
+                data = dict((col, val) for col, val in row.items())  # serialize in key, value pairs
+                if data['imei'] not in done:  # save distinct imeis
+                    done.add(data['imei'])  # note it down for further iterations
+                    data['case_status'] = data['status']
+                    response_data.append(data)  # append distinct imei
+            app.logger.info("Distinct IMEI list from Database generated successfully")
+            return response_data
+        except Exception as e:
+            app.logger.critical("Exception occurred while getting distinct imeis in list generation process")
+            app.logger.exception(e)
+            return "Exception occurred while getting distinct imeis."
+
+    @staticmethod
     def create_list():
         """Generates delta stolen list."""
         try:
             trigger = 'SET ROLE delta_list_user; COMMIT;'
             db.session.execute(trigger)
-            resp = GenList.get_distinct_imeis()
+            resp1 = GenList.get_distinct_imeis()
+            resp2 = GenList.get_distinct_cplc_imeis()
+            resp = resp1+resp2
             app.logger.info("Comparing IMEIs with previous delta...")
             delta_list = []  # delta list
             for data in tqdm(resp):  # iterate distince imeis
@@ -119,7 +142,9 @@ class GenList:
             response_data = []  # distinct imeis list
             sql = "select case_status, created_at, i.imei from public.case as c, device_details as d, device_imei as i where d.case_id=c.id and d.id=i.device_id"
             query = db.engine.execute(sql)  # retrieve imeis from case, device and imei models
-            results = list(query)
+            resp1 = list(query)
+            resp2 = GenList.get_distinct_cplc_imeis()
+            results = resp1 + resp2
             with tqdm(total=len(results)) as pbar:
                 for row in reversed(results):  # iterate results
                     tqdm.update(pbar)

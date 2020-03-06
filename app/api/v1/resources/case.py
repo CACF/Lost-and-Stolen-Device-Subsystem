@@ -19,10 +19,12 @@ from app import db
 from flask_babel import _
 from ..assets.response import MIME_TYPES, CODES, MESSAGES
 from ..models.case import Case
+from ..models.summary import Summary
 from ..assets.pagination import Pagination
 from ..schema.case import CaseInsertSchema, CaseStatusUpdateSchema, CaseUpdateSchema, CasesSchema, CaseGetBlockedSchema
 from ..schema.validations import *
 from ..helpers.common_resources import CommonResources
+from ..helpers.tasks import CeleryTasks
 
 from flask import Response
 from sqlalchemy import desc
@@ -350,3 +352,58 @@ class UpdateCase(MethodResource):
             response = Response(json.dumps(data), status=CODES.get('INTERNAL_SERVER_ERROR'),
                                 mimetype=MIME_TYPES.get('APPLICATION_JSON'))
             return response
+
+
+class BlockAll(MethodResource):
+    @doc(description='Block all pending cases', tags=['Cases'])
+    @use_kwargs(CasesSchema().fields_dict, locations=['query'])
+    def get(self):
+        response = (CeleryTasks.block_all.s() |
+                    CeleryTasks.log_results.s(input=None)).apply_async()
+        summary_data = {
+            "tracking_id": response.parent.id,
+            "status": response.state
+        }
+        Summary.create(summary_data)
+        data = {
+            "message": _("You can track your request using this id"),
+            "task_id": response.parent.id,
+            "state": response.state
+        }
+        return Response(json.dumps(data), status=CODES.get('OK'), mimetype=MIME_TYPES.get('APPLICATION_JSON'))
+
+
+class CheckStatus(MethodResource):
+    """Flask resource to check bulk processing status."""
+
+    @doc(description="Check bulk request status", tags=['bulk'])
+    def post(self, task_id):
+        """Returns bulk processing status and summary if processing is completed."""
+        try:
+            result = Summary.find_by_trackingid(task_id)
+            if result is None:
+                response = {
+                    "state": _("task not found.")
+                }
+            else:
+                if result['status'] == 'PENDING':
+                    # job is in progress yet
+                    response = {
+                        'state': _('PENDING')
+                    }
+                elif result['status'] == 'SUCCESS':
+                    response = {
+                        "state": _(result['status']),
+                        "result": result['response']['response']
+                    }
+                else:
+                    # something went wrong in the background job
+                    response = {
+                        'state': _('Processing Failed.')
+                    }
+            return Response(json.dumps(response), status=CODES.get('OK'), mimetype=MIME_TYPES.get('JSON'))
+        except Exception as e:
+            app.logger.info("Error occurred while retrieving status.")
+            app.logger.exception(e)
+            return Response(MESSAGES.get('INTERNAL_SERVER_ERROR'), CODES.get('INTERNAL_SERVER_ERROR'),
+                            mimetype=MIME_TYPES.get('JSON'))

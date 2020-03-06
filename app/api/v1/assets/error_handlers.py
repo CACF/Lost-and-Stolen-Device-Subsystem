@@ -48,3 +48,11 @@ CustomErrors = {
         'status': 405,
     }
 }
+
+
+def custom_response(message, status, mimetype):
+    """handle custom errors"""
+    resp = Response(json.dumps({"message": message, "status_code": status}),
+                    status=status,
+                    mimetype=mimetype)
+    return resp

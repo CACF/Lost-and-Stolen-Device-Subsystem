@@ -28,6 +28,7 @@ from ..models.devicedetails import DeviceDetails
 from ..models.deviceimei import DeviceImei
 # noinspection PyUnresolvedReferences
 from ..models.casecomments import CaseComments
+from ..models.cplc import Cplc
 from ..assets.response import CODES
 
 from .eshelper import ElasticSearchResource
@@ -126,7 +127,8 @@ class Case(db.Model):
             trigger = 'SET ROLE case_user; COMMIT;'
             db.session.execute(trigger)
             flag = Case.find_data(args['device_details']['imeis'])
-            if flag.get('flag') is not None:
+            cplc_flag = Cplc.find_cplc_data(args['device_details']['imeis'])
+            if flag.get('flag') is not None or cplc_flag.get('flag') is not None:
                 return {"code": CODES.get('CONFLICT'), "data": flag.get('imei')}
             else:
                 case = cls(args)
@@ -147,7 +149,7 @@ class Case(db.Model):
 
                     db.session.commit()
                     case = Case.query.filter_by(tracking_id=case.tracking_id).first()
-                    ElasticSearchResource.insert_doc(case.serialize, case.tracking_id, "Pending")
+                    ElasticSearchResource.insert_doc(case.serialize)
                     return {"code": CODES.get('OK'), "data": case.tracking_id}
                 else:
                     return {"code": CODES.get('BAD_REQUEST')}

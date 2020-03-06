@@ -29,6 +29,14 @@ global:
 
   retry: 10
 
+  ReportDeletionTime: 24
+
+# allowed file extensions
+allowed_file_types:
+  AllowedTypes: ['text/tab-separated-values', 'text/plain']
+  AllowedExt: ['tsv', 'csv']
+
+
 validation:
   number: '^\+?[0-9]{7,15}$'
   gin: '^\d{5}\-?\d{7}\-?\d$'

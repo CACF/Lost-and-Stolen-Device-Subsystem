@@ -14,7 +14,7 @@ NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS 
 """
 
 __all__ = ["case", "casecomments", "caseincidentdetails", "casepersonaldetails", "devicedetails",
-           "deviceimei", "devicemsisdn", "natureofincident", "status", "delta_list"]
+           "deviceimei", "devicemsisdn", "natureofincident", "status", "delta_list", "summary", "cplc"]
 from ..models import *
 from flask_sqlalchemy import declarative_base
 

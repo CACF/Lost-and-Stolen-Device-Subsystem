@@ -17,6 +17,7 @@ from app import app, db
 from flask_babel import _
 import requests
 import json
+from ..models.case import Case
 
 
 class CommonResources:
@@ -85,14 +86,16 @@ class CommonResources:
     def subscribers(imei):
         """Return subscriber's details fetched from DIRBS core."""
         try:
-            seen_with_url = requests.get('{base}/{version}/imei/{imei}/subscribers?order=Descending'.format(base=app.config['dev_config']['dirbs_core']['base_url'], version=app.config['dev_config']['dirbs_core']['version'], imei=imei))  # dirbs core imei api call
+            seen_with_url = requests.get('{base}/{version}/imei/{imei}/subscribers?limit=10&offset=0&order=DESC'.format(base=app.config['dev_config']['dirbs_core']['base_url'], version=app.config['dev_config']['dirbs_core']['version'], imei=imei))  # dirbs core imei api call
             seen_with_resp = seen_with_url.json()
             result_size = seen_with_resp.get('_keys').get('result_size')
-            seen_with_url = requests.get('{base}/{version}/imei/{imei}/subscribers?order=Descending&limit={result_size}'.format(base=app.config['dev_config']['dirbs_core']['base_url'], version=app.config['dev_config']['dirbs_core']['version'],imei=imei,result_size=result_size))  # dirbs core imei api call
-            seen_with_resp = seen_with_url.json()
-            data = seen_with_resp.get('subscribers')
-            seen = set()
-            result = [x for x in data if [(x['msisdn'], x['imsi']) not in seen, seen.add((x['msisdn'], x['imsi']))][0]]
+            result = []
+            if result_size>0:
+                seen_with_url = requests.get('{base}/{version}/imei/{imei}/subscribers?offset=0&order=DESC&limit={result_size}'.format(base=app.config['dev_config']['dirbs_core']['base_url'], version=app.config['dev_config']['dirbs_core']['version'],imei=imei,result_size=result_size))  # dirbs core imei api call
+                seen_with_resp = seen_with_url.json()
+                data = seen_with_resp.get('subscribers')
+                seen = set()
+                result = [x for x in data if [(x['msisdn'], x['imsi']) not in seen, seen.add((x['msisdn'], x['imsi']))][0]]
 
             return {'subscribers': result}
         except Exception as error:
@@ -187,8 +190,8 @@ class CommonResources:
                 "device_details": {
                     "description": case.get('physical_description'),
                     "model_name": case.get('model_name'),
-                    "imeis": case.get('imeis').split(','),
-                    "msisdns": case.get('msisdns').split(','),
+                    "imeis": case.get('imeis').replace(' ','').split(','),
+                    "msisdns": case.get('msisdns').replace(' ','').split(','),
                     "brand": case.get('brand')
                 },
                 "status": _(case.get('status')),
@@ -202,7 +205,7 @@ class CommonResources:
     def get_pending_cases():
         trigger = 'SET ROLE case_user; COMMIT;'
         db.session.execute(trigger)
-        sql = "select c.*, cid.date_of_incident, cid.nature_of_incident, cpd.full_name, cpd.address, cpd.alternate_number, cpd.dob, cpd.email, cpd.gin, cpd.father_name, cpd.mother_name, cpd.district, cpd.landline_number, dd.brand, dd.model_name, dd.physical_description, s.description as status, ni.name as incident_type, string_agg(distinct(di.imei::text), ', '::text) as imeis, string_agg(distinct(msisdn::text), ', '::text) as msisdns, string_agg(distinct(json_build_object('comment',cc.comments, 'comment_date',cc.comment_date, 'user_id',cc.user_id, 'username',cc.username, 'id',cc.id)::text), '| '::text) as comments from public.case as c left join case_comments as cc on cc.case_id=c.id, case_incident_details as cid, case_personal_details as cpd, device_details as dd, device_imei as di, device_msisdn as dm, public.status as s, public.nature_of_incident as ni where c.case_status=" + str(
+        sql = "select c.*, cid.date_of_incident, cid.nature_of_incident, cpd.full_name, cpd.address, cpd.alternate_number, cpd.dob, cpd.email, cpd.gin, cpd.father_name, cpd.mother_name, cpd.district, cpd.landline_number, dd.brand, dd.model_name, dd.physical_description, s.description as status, ni.name as incident_type, string_agg(distinct(di.imei::text), ', '::text) as imeis, string_agg(distinct(msisdn::text), ', '::text) as msisdns, string_agg(distinct(json_build_object('comment',cc.comments, 'comment_date',cc.comment_date, 'user_id',cc.user_id, 'username',cc.username, 'id',cc.id)::text), '| '::text) as comments from public.case as c left join case_comments as cc on cc.case_id=c.id, case_incident_details as cid, case_personal_details as cpd, device_details as dd, device_imei as di, device_msisdn as dm, public.status as s, public.nature_of_incident as ni where c.get_blocked=true and c.case_status=" + str(
             3) + " and cid.case_id=c.id and cpd.case_id=c.id and dd.case_id=c.id and di.device_id=dd.id and dm.device_id=dd.id  and s.id=c.case_status and ni.id=cid.nature_of_incident group by c.id, cid.date_of_incident, cid.nature_of_incident, cpd.full_name, cpd.dob, cpd.alternate_number, cpd.address, cpd.email, cpd.gin,cpd.father_name, cpd.mother_name, cpd.district, cpd.landline_number, dd.brand, dd.model_name, dd.physical_description, s.description, ni.name order by c.updated_at desc"
         cases = db.session.execute(sql)
         return CommonResources.serialize_cases(cases)
@@ -213,10 +216,10 @@ class CommonResources:
             if case['get_blocked']:
                 for imei in case['device_details']['imeis']:
                     subscribers = CommonResources.subscribers(imei)
-                    for subs in subscribers:
+                    for subs in subscribers['subscribers']:
                         if subs['msisdn'] in case['device_details']['msisdns']:
-                            case = db.session.query.filter_by(tracking_id=case['tracking_id']).first()
-                            case.case_status = 2
+                            result = db.session.query(Case).filter_by(tracking_id=case['tracking_id']).first()
+                            result.case_status = 2
                             db.session.commit()
                             cases.remove(case)
                         else:
@@ -227,6 +230,15 @@ class CommonResources:
 
     @staticmethod
     def notify_users(cases):
-        pass
-
-
+        if cases:
+            for case in cases:
+                for msisdn in case['device_details']['msisdns']:
+                    requests.get('{base}?username={username}&password={password}&to={to}&text={text}&from={from_no}'.
+                                 format(base=app.config['dev_config']['SMSC']['BaseUrl'],
+                                        username=app.config['dev_config']['SMSC']['Username'],
+                                        to=msisdn, text="hello",
+                                        password=app.config['dev_config']['SMSC']['Password'],
+                                        from_no=app.config['dev_config']['SMSC']['From']))
+        else:
+            print("no users to be notified.")
+        return None

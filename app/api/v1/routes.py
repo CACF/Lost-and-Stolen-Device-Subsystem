@@ -17,8 +17,9 @@ from flask_restful import Api
 from .resources.common import BaseRoutes
 from .resources.admin import FetchImei, FetchMsisdn
 from .resources.system import IncidentNature, CaseStatus
-from .resources.case import CaseRoutes, CaseList, InsertCase, UpdateCase
+from .resources.case import CaseRoutes, CaseList, InsertCase, UpdateCase, BlockAll, CheckStatus
 from .resources.search import Search, ES_Search
+from .resources.cplc import BlockCases, DownloadFile
 
 # noinspection PyUnresolvedReferences
 from .assets.error_handlers import *
@@ -50,14 +51,21 @@ api.add_resource(CaseList, '/cases')
 api.add_resource(Search, '/search')
 # noinspection PyTypeChecker
 api.add_resource(ES_Search, '/es_search')
-
+# noinspection PyTypeChecker
+api.add_resource(BlockAll, '/block_all')
+# noinspection PyTypeChecker
+api.add_resource(CheckStatus, '/status/<task_id>')
+# noinspection PyTypeChecker
+api.add_resource(BlockCases, '/cplc_block')
+# noinspection PyTypeChecker
+api.add_resource(DownloadFile, '/download/<filename>')
 docs = apidoc.init_doc()
 
 
 def register():
     """Method to register routes for docs."""
     for route in [BaseRoutes, FetchImei, FetchMsisdn, IncidentNature, CaseStatus, CaseList, Search,
-                  CaseRoutes, InsertCase, UpdateCase, ES_Search]:
+                  CaseRoutes, InsertCase, UpdateCase, ES_Search, BlockAll, CheckStatus, BlockCases, DownloadFile]:
         docs.register(route)
 
 

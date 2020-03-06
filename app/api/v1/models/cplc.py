@@ -46,19 +46,9 @@
 
 # noinspection PyProtectedMember
 from sqlalchemy.orm.collections import InstrumentedList
-from sqlalchemy import or_, and_
 from app import db
-# noinspection PyUnresolvedReferences
-from ..models.caseincidentdetails import CaseIncidentDetails
-# noinspection PyUnresolvedReferences
-from ..models.casepersonaldetails import CasePersonalDetails
-# noinspection PyUnresolvedReferences
-from ..models.devicedetails import DeviceDetails
-# noinspection PyUnresolvedReferences
-from ..models.deviceimei import DeviceImei
-# noinspection PyUnresolvedReferences
-from ..models.case import Case
 from ..assets.response import CODES
+
 
 class Cplc(db.Model):
     """Case database model"""
@@ -82,7 +72,8 @@ class Cplc(db.Model):
             "imei": self.imei,
             "msisdn": self.msisdn,
             "created_at": self.created_at,
-            "status": self.status
+            "status": self.status,
+            "updated_at": self.updated_at
             }
 
     # pass instrumented list object to get string value
@@ -96,33 +87,58 @@ class Cplc(db.Model):
         except Exception:
             raise Exception
 
-    @staticmethod
-    def find_data(imei):
-        """Check if data already exists."""
-        try:
-            flag = db.session.query(DeviceImei).join(DeviceImei.devicedetails).join(DeviceDetails.case).\
-                filter(and_(or_(Case.case_status == 3, Case.case_status == 2), DeviceImei.imei == imei)).first()
-            if flag:
-                return {'flag': flag, 'imei': imei}
-            return {'flag': None, 'imei': None}
-        except Exception:
-            db.session.rollback()
-            raise Exception
-
     @classmethod
     def create(cls, imei, msisdn, status):
         """Insert data into database."""
         try:
-            flag = Case.find_data(imei)
-            if flag.get('flag') is not None:
-                return {"code": CODES.get('CONFLICT'), "data": flag.get('imei')}
-            else:
-                case = cls(imei, msisdn, status)
-                db.session.add(case)
-                db.session.commit()
-                return {"code": CODES.get('OK'), "data": case.tracking_id}
+            case = cls(imei, msisdn, status)
+            db.session.add(case)
+            db.session.commit()
+            return CODES.get('OK')
         except Exception:
             db.session.rollback()
             raise Exception
         finally:
             db.session.close()
+
+    @staticmethod
+    def get_case(imei):
+        """Retrieve data by imei."""
+        try:
+            case = Cplc.query.filter_by(imei=imei).first()
+            if case:
+                return case.serialize
+            return {}
+        except Exception:
+            raise Exception
+
+
+    @classmethod
+    def update_status(cls, imei):
+        """Update status."""
+        try:
+            case = cls.query.filter_by(imei=imei).first()
+            if case.case_status == 2:
+                case.case_status = 1
+                case.updated_at = db.func.now()
+                db.session.commit()
+            else:
+                return CODES.get('NOT_ACCEPTABLE')
+        except Exception:
+            db.session.rollback()
+            raise Exception
+        finally:
+            db.session.close()
+
+    @staticmethod
+    def find_cplc_data(imeis):
+        """Check if data already exists."""
+        try:
+            for imei in imeis:
+                flag = Cplc.get_case(imei)
+                if flag and flag.get('status') == 2:
+                    return {'flag': flag, 'imei': imei}
+            return {'flag': None, 'imei': None}
+        except Exception:
+            db.session.rollback()
+            raise Exception
