@@ -265,15 +265,20 @@ class InsertCase(MethodResource):
         """Insert case details."""
         try:
             tracking_id = Case.create(kwargs)
-
             if tracking_id.get('code') == 409:
                 data = {
-                    'message': _('IMEI: %(imei)s is a duplicate entry.',imei=tracking_id.get('data')),
+                    'message': _('IMEI: %(imei)s is a duplicate entry.', imei=tracking_id.get('data')),
                 }
                 response = Response(json.dumps(data), status=CODES.get("CONFLICT"),
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                 return response
-
+            if tracking_id.get('code') == 208:
+                data = {
+                    'message': _('IMEI: %(imei)s is already reported and blocked through CPLC.', imei=tracking_id.get('data')),
+                }
+                response = Response(json.dumps(data), status=CODES.get("ALREADY_REPORTED"),
+                                    mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+                return response
             if tracking_id.get('code') == 400:
                 data = {
                     "message": _("Enter at least one optional field with full name in personal details.")

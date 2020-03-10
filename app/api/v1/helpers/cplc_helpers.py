@@ -44,18 +44,21 @@ class CplcCommonResources:
         failed_list = []
         success_list = []
         for data in filtered_data:
-            flag = Case.find_data(data['imei'])
+            flag = Case.find_data([data['imei']])
+            flag2 = Cplc.find_cplc_data([data['imei']])
             if flag.get('flag') is not None:
                 failed_list.append({"imei": data['imei'], "status": "Exists in LSDS"})
+            elif flag2.get('flag') is not None:
+                failed_list.append({"imei": data['imei'], "status": "Exists in CPLC"})
             else:
                 subscribers = CommonResources.subscribers(data['imei'])
                 if subscribers['subscribers']:
-                    for subs in subscribers['subscribers']:
-                        if subs['msisdn'] == data['msisdn']:
-                            Cplc.create(data['imei'], data['msisdn'], 2)
-                            success_list.append(data['imei'])
-                        else:
-                            failed_list.append({"imei": data['imei'], "status": "Data does not match"})
+                    msisdns = [subs['msisdn'] for subs in subscribers['subscribers']]
+                    if data['msisdn'] in msisdns:
+                        Cplc.create(data['imei'], data['msisdn'], 2)
+                        success_list.append(data['imei'])
+                    else:
+                        failed_list.append({"imei": data['imei'], "status": "Data does not match"})
                 else:
                     failed_list.append({"imei": data['imei'], "status": "Data does not match"})
         return failed_list, success_list

@@ -128,8 +128,10 @@ class Case(db.Model):
             db.session.execute(trigger)
             flag = Case.find_data(args['device_details']['imeis'])
             cplc_flag = Cplc.find_cplc_data(args['device_details']['imeis'])
-            if flag.get('flag') is not None or cplc_flag.get('flag') is not None:
+            if flag.get('flag') is not None:
                 return {"code": CODES.get('CONFLICT'), "data": flag.get('imei')}
+            elif cplc_flag.get('flag') is not None:
+                return {"code": CODES.get('ALREADY_REPORTED'), "data": cplc_flag.get('imei')}
             else:
                 case = cls(args)
                 db.session.add(case)

@@ -62,7 +62,7 @@ class Cplc(db.Model):
     def __init__(self, imei, msisdn, status):
         """Constructor."""
         self.imei = imei
-        self.case_status = status
+        self.status = status
         self.msisdn = msisdn
 
     @property
@@ -125,7 +125,6 @@ class Cplc(db.Model):
                     db.session.commit()
                 else:
                     return CODES.get('NOT_ACCEPTABLE')
-
         except Exception:
             db.session.rollback()
             raise Exception

@@ -107,7 +107,7 @@ def CreateRoles():
             trigger = "CREATE ROLE %s;" % role
             db.engine.execute(trigger)
             print("Already existed but created successfully")
-    grant_access_case_user = "GRANT SELECT, UPDATE, INSERT ON public.case, public.case_comments, public.case_incident_details, public.case_personal_details, public.device_details, public.device_imei, public.device_msisdn, public.nature_of_incident, public.status, public.summary TO case_user"
+    grant_access_case_user = "GRANT SELECT, UPDATE, INSERT ON public.case, public.case_comments, public.case_incident_details, public.case_personal_details, public.device_details, public.device_imei, public.device_msisdn, public.nature_of_incident, public.status, public.summary, public.cplc TO case_user"
     db.engine.execute(grant_access_case_user)
     grant_squences = "GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO case_user"
     db.engine.execute(grant_squences)
@@ -115,7 +115,7 @@ def CreateRoles():
     grant_access_search_user = "GRANT SELECT ON public.search TO search_user"
     db.engine.execute(grant_access_search_user)
     print("Permission granted to role search_user")
-    grant_access_delta_list_user = "GRANT SELECT ON public.case, public.device_details, public.device_imei TO delta_list_user"
+    grant_access_delta_list_user = "GRANT SELECT ON public.case, public.device_details, public.device_imei, public.cplc TO delta_list_user"
     db.engine.execute(grant_access_delta_list_user)
     print("Permission granted to role delta_list_user for case model")
     grant_access_delta_list_user = "GRANT SELECT, INSERT, UPDATE ON public.delta_list TO delta_list_user"
