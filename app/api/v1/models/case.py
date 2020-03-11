@@ -276,7 +276,7 @@ class Case(db.Model):
                                 case.case_status = args.get('case_status')
                                 CaseComments.add(args.get('case_comment'), case.id, args.get('user_id'), args.get('username'))
                                 db.session.commit()
-                                ElasticSearchResource.update_doc(case.tracking_id, {"status": "Recovered"})
+                                ElasticSearchResource.update_doc(case.tracking_id, {"doc": {"status": "Recovered"}})
                                 ElasticSearchResource.insert_comments(comment=args.get('case_comment'),
                                                                       userid=args.get('user_id'),
                                                                       username=args.get('username'),
@@ -292,9 +292,9 @@ class Case(db.Model):
                                 case.case_status = args.get('case_status')
                                 CaseComments.add(args.get('case_comment'), case.id, args.get('user_id'), args.get('username'))
                                 db.session.commit()
-                                ElasticSearchResource.update_doc(case.tracking_id, {
+                                ElasticSearchResource.update_doc(case.tracking_id, {"doc": {
                                     "status": "Recovered" if args.get('case_status') == 1 else "Blocked" if args.get(
-                                        'case_status') == 2 else "Pending"})
+                                        'case_status') == 2 else "Pending"}})
                                 ElasticSearchResource.insert_comments(comment=args.get('case_comment'),
                                                                       userid=args.get('user_id'),
                                                                       username=args.get('username'),
