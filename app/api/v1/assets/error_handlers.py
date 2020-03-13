@@ -41,6 +41,17 @@ def validation_errors(error):
                     mimetype='application/json')
 
 
+@app.errorhandler(401)
+def validation_errors(error):
+    data = {
+        'message': "Unauthorized access"
+    }
+
+    response = Response(json.dumps(data), status=CODES.get('UNAUTHORIZED'),
+                        mimetype=MIME_TYPES.get('APPLICATION_JSON'))
+    return response
+
+
 # flask-restful custom errors
 CustomErrors = {
     'MethodNotAllowed': {

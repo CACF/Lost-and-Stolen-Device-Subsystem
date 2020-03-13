@@ -25,6 +25,7 @@ from ..schema.case import CaseInsertSchema, CaseStatusUpdateSchema, CaseUpdateSc
 from ..schema.validations import *
 from ..helpers.common_resources import CommonResources
 from ..helpers.tasks import CeleryTasks
+from ..helpers.decorators import restricted
 
 from flask import Response
 from sqlalchemy import desc
@@ -78,6 +79,7 @@ class CaseRoutes(MethodResource):
 
     @doc(description='Update case details', tags=['Case'])
     @use_kwargs(CaseUpdateSchema().fields_dict, locations=['json'])
+    @restricted
     def put(self, tracking_id, **kwargs):
         """Update case personal details."""
         try:
@@ -134,6 +136,7 @@ class CaseRoutes(MethodResource):
 
     @doc(description='Update case status', tags=['Case'])
     @use_kwargs(CaseStatusUpdateSchema().fields_dict, locations=['json'])
+    @restricted
     def patch(self, tracking_id, **kwargs):
         """Update case status."""
 
@@ -321,6 +324,7 @@ class InsertCase(MethodResource):
 class UpdateCase(MethodResource):
     @doc(description='Update case information', tags=['Case'])
     @use_kwargs(CaseGetBlockedSchema().fields_dict, locations=['json'])
+    @restricted
     def patch(self, tracking_id, **args):
         """Update case get blocked information."""
         try:
