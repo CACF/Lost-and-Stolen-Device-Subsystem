@@ -112,9 +112,9 @@ def CreateRoles():
     grant_squences = "GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO case_user"
     db.engine.execute(grant_squences)
     print("Permission granted to role case_user")
-    grant_access_search_user = "GRANT SELECT ON public.search TO search_user"
-    db.engine.execute(grant_access_search_user)
-    print("Permission granted to role search_user")
+    # grant_access_search_user = "GRANT SELECT ON public.search TO search_user"
+    # db.engine.execute(grant_access_search_user)
+    # print("Permission granted to role search_user")
     grant_access_delta_list_user = "GRANT SELECT ON public.case, public.device_details, public.device_imei, public.cplc TO delta_list_user"
     db.engine.execute(grant_access_delta_list_user)
     print("Permission granted to role delta_list_user for case model")
