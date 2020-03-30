@@ -39,7 +39,6 @@ install-db:
 	python3 manage.py db migrate
 	python3 manage.py db upgrade
 	python3 manage.py DbTrigger
-	python3 manage.py CreateView
 	python3 manage.pt CreateRoles
 	python3 manage.py Seed
 
@@ -47,7 +46,6 @@ upgrade-db:
 	python3 manage.py db migrate
 	python3 manage.py db upgrade
 	python3 manage.py DbTrigger
-	python3 manage.py CreateView
 	python3 manage.py CreateRoles
 	python3 manage.py Seed
 
