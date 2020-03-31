@@ -39,7 +39,7 @@ def Seed():
     try:
         status = seed.seed_status()
         incident_types = seed.seed_incident_types()
-        return status, incident_types
+        print(status, incident_types)
     except Exception as e:
         app.logger.exception(e)
         sys.exit(1)
@@ -55,13 +55,13 @@ def DbTrigger():
     if db.engine.execute(check).fetchone() is None:
         trigger = 'create trigger insert_tracking_id_trigger after insert on public.case referencing new table as "case" for each row execute procedure tracking_id_function()'
         db.engine.execute(trigger)
-        return "Function created successfully"
+        print("Function created successfully")
     else:
         drop_trigger = "drop trigger insert_tracking_id_trigger on public.case CASCADE;"
         db.engine.execute(drop_trigger)
         trigger = 'create trigger insert_tracking_id_trigger after insert on public.case referencing new table as "case" for each row execute procedure tracking_id_function()'
         db.engine.execute(trigger)
-        return "Function created successfully"
+        print("Function created successfully")
 
 
 @manager.command
@@ -99,7 +99,7 @@ def CreateRoles():
     db.engine.execute(grant_squences)
     print("Permission granted to role delta_list_user for delta list model")
 
-    return "Roles created successfully"
+    print("Roles created successfully")
 
 
 @manager.command
