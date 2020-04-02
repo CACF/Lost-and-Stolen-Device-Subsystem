@@ -113,16 +113,16 @@ def GenFullList():
 
 @manager.command
 def CreateIndex():
-    return ElasticSearchResource.create_index()
+    app.logger.info(ElasticSearchResource.create_index())
 
 
 @manager.command
 def MigrateDataBulk():
-    return DataMigration.bulk_insert()
+    app.logger.info(DataMigration.bulk_insert())
 
 @manager.command
 def MigrateData():
-    return DataMigration.single_insert()
+    app.logger.info(DataMigration.single_insert())
 
 
 if __name__ == '__main__':
