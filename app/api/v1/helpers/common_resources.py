@@ -232,13 +232,13 @@ class CommonResources:
     def notify_users(cases):
         if cases:
             for case in cases:
-                for msisdn in case['device_details']['msisdns']:
-                    requests.get('{base}?username={username}&password={password}&to={to}&text={text}&from={from_no}'.
-                                 format(base=app.config['dev_config']['SMSC']['BaseUrl'],
-                                        username=app.config['dev_config']['SMSC']['Username'],
-                                        to=msisdn, text="hello",
-                                        password=app.config['dev_config']['SMSC']['Password'],
-                                        from_no=app.config['dev_config']['SMSC']['From']))
+                requests.get('{base}?username={username}&password={password}&to={to}&text={text}&from={from_no}'.
+                             format(base=app.config['dev_config']['SMSC']['BaseUrl'],
+                                    username=app.config['dev_config']['SMSC']['Username'],
+                                    to=case['personal_details']['number'],
+                                    text=app.config['dev_config']['SMSC']['Text'],
+                                    password=app.config['dev_config']['SMSC']['Password'],
+                                    from_no=app.config['dev_config']['SMSC']['From']))
         else:
             print("no users to be notified.")
         return None

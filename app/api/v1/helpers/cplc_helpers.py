@@ -37,7 +37,8 @@ class CplcCommonResources:
         data = pd.DataFrame(data)
         matched = data['imei'].str.match('^[a-fA-F0-9]{14,16}$')
         filtered_data = data[matched].T.to_dict().values()
-        return filtered_data
+        invalid_data = [{"imei": d['imei'], "status": "Invalid Data"} for d in data[~matched].T.to_dict().values()]
+        return filtered_data, invalid_data
 
     @staticmethod
     def block(filtered_data):
@@ -55,7 +56,10 @@ class CplcCommonResources:
                 if subscribers['subscribers']:
                     msisdns = [subs['msisdn'] for subs in subscribers['subscribers']]
                     if data['msisdn'] in msisdns:
-                        Cplc.create(data['imei'], data['msisdn'], 2)
+                        if Cplc.find_cplc([data['imei']])['flag'] is not None:
+                            Cplc.update_status(data['imei'])
+                        else:
+                            Cplc.create(data['imei'], data['msisdn'], 2)
                         success_list.append(data['imei'])
                     else:
                         failed_list.append({"imei": data['imei'], "status": "Data does not match"})
@@ -80,11 +84,12 @@ class CplcCommonResources:
         return failed_list, success_list
 
     @staticmethod
-    def generate_report(failed_list):
+    def generate_report(failed_list, invalid_data):
         """Return non compliant report for DVS bulk request."""
         try:
-            if failed_list:
-                complaint_report = pd.DataFrame(failed_list)
+            final_list = failed_list+invalid_data
+            if final_list:
+                complaint_report = pd.DataFrame(final_list)
                 report_name = 'cplc_failed_imeis' + str(uuid.uuid4()) + '.tsv'
                 complaint_report.to_csv(os.path.join(app.config['dev_config']['UPLOADS']['report_dir'], report_name), sep= '\t')
             else:
@@ -98,11 +103,11 @@ class CplcCommonResources:
     @staticmethod
     def process(file):
         data = CplcCommonResources.save_file(file)
-        clean_data = CplcCommonResources.clean_data(data)
+        clean_data, invalid_data = CplcCommonResources.clean_data(data)
         failed_list, success_list = CplcCommonResources.block(clean_data)
-        report = CplcCommonResources.generate_report(failed_list)
+        report = CplcCommonResources.generate_report(failed_list, invalid_data)
         return {
             "success": len(success_list),
-            "failed": len(failed_list),
+            "failed": len(failed_list+invalid_data),
             "report_name": report
         }

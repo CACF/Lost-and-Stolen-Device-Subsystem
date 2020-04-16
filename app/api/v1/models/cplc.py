@@ -123,6 +123,10 @@ class Cplc(db.Model):
                     case.status = 1
                     case.updated_at = db.func.now()
                     db.session.commit()
+                elif case.status == 1:
+                    case.status = 2
+                    case.updated_at = db.func.now()
+                    db.session.commit()
                 else:
                     return CODES.get('NOT_ACCEPTABLE')
         except Exception:
@@ -138,6 +142,19 @@ class Cplc(db.Model):
             for imei in imeis:
                 flag = Cplc.get_case(imei)
                 if flag and flag.get('status') == 2:
+                    return {'flag': flag, 'imei': imei}
+            return {'flag': None, 'imei': None}
+        except Exception:
+            db.session.rollback()
+            raise Exception
+
+    @staticmethod
+    def find_cplc(imeis):
+        """Check if data already exists."""
+        try:
+            for imei in imeis:
+                flag = Cplc.get_case(imei)
+                if flag:
                     return {'flag': flag, 'imei': imei}
             return {'flag': None, 'imei': None}
         except Exception:

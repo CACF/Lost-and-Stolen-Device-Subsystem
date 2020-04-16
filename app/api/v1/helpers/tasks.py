@@ -63,9 +63,9 @@ class CeleryTasks:
     @staticmethod
     @celery.task()
     def cplc_block(file):
-        clean_data = CplcCommonResources.clean_data(file)
+        clean_data, invalid_data = CplcCommonResources.clean_data(file)
         failed_list, success_list = CplcCommonResources.block(clean_data)
-        report = CplcCommonResources.generate_report(failed_list)
+        report = CplcCommonResources.generate_report(failed_list, invalid_data)
         return {
             "response": {
                 "success": len(success_list),
@@ -78,9 +78,9 @@ class CeleryTasks:
     @staticmethod
     @celery.task()
     def cplc_unblock(file):
-        clean_data = CplcCommonResources.clean_data(file)
+        clean_data, invalid_data = CplcCommonResources.clean_data(file)
         failed_list, success_list = CplcCommonResources.unblock(clean_data)
-        report = CplcCommonResources.generate_report(failed_list)
+        report = CplcCommonResources.generate_report(failed_list, invalid_data)
         return {
             "response": {
                 "success": len(success_list),
