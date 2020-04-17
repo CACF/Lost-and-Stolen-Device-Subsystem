@@ -99,15 +99,3 @@ class CplcCommonResources:
             app.logger.info("Error occurred while generating report.")
             app.logger.exception(e)
             raise e
-
-    @staticmethod
-    def process(file):
-        data = CplcCommonResources.save_file(file)
-        clean_data, invalid_data = CplcCommonResources.clean_data(data)
-        failed_list, success_list = CplcCommonResources.block(clean_data)
-        report = CplcCommonResources.generate_report(failed_list, invalid_data)
-        return {
-            "success": len(success_list),
-            "failed": len(failed_list+invalid_data),
-            "report_name": report
-        }

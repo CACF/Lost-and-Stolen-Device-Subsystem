@@ -69,7 +69,7 @@ class CeleryTasks:
         return {
             "response": {
                 "success": len(success_list),
-                "failed": len(failed_list),
+                "failed": len(failed_list+invalid_data),
                 "report_name": report
             },
             "task_id": celery.current_task.request.id
@@ -84,7 +84,7 @@ class CeleryTasks:
         return {
             "response": {
                 "success": len(success_list),
-                "failed": len(failed_list),
+                "failed": len(failed_list+invalid_data),
                 "report_name": report
             },
             "task_id": celery.current_task.request.id
