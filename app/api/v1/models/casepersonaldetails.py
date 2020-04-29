@@ -22,7 +22,6 @@ class CasePersonalDetails(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     case_id = db.Column(db.Integer, db.ForeignKey('case.id', ondelete='CASCADE'))
     full_name = db.Column(db.String(1000))
-    dob = db.Column(db.String(80), server_default='N/A')
     address = db.Column(db.Text, server_default='N/A')
     gin = db.Column(db.String(30), server_default='N/A')
     alternate_number = db.Column(db.String(30), server_default='N/A')
@@ -36,7 +35,6 @@ class CasePersonalDetails(db.Model):
         """Constructor"""
         self.case_id = case_id
         self.full_name = args.get("full_name").strip()
-        self.dob = args.get("dob")
         self.address = args.get("address").strip() if args.get("address") else args.get("address")
         self.gin = args.get("gin")
         self.alternate_number = args.get("number")
@@ -52,7 +50,6 @@ class CasePersonalDetails(db.Model):
         """Serialize data."""
         return {
             'full_name': _(self.full_name),
-            'dob': _(self.dob),
             'address': _(self.address),
             'gin': _(self.gin),
             'number': _(self.alternate_number),
@@ -79,7 +76,6 @@ class CasePersonalDetails(db.Model):
         try:
             person = cls.query.filter_by(case_id=case_id).first()
             person.full_name = args.get('full_name').strip()
-            person.dob = args.get('dob')
             person.address = args.get("address").strip() if args.get("address") else args.get("address")
             person.gin = args.get('gin')
             person.alternate_number = args.get('number')

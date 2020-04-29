@@ -200,7 +200,7 @@ class Case(db.Model):
                     personal_details = args.get("personal_details")
                     # status_args = args.get('status_args')
 
-                    if any(item is not None for item in [personal_details.get('email'), personal_details.get('dob'),
+                    if any(item is not None for item in [personal_details.get('email'),
                                                          personal_details.get('address'), personal_details.get('gin'),
                                                          personal_details.get('number')]):
 
