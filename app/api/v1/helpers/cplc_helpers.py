@@ -47,10 +47,10 @@ class CplcCommonResources:
         for data in filtered_data:
             flag = Case.find_data([data['imei']])
             flag2 = Cplc.find_cplc_data([data['imei']])
-            if flag.get('flag') is not None:
-                failed_list.append({"imei": data['imei'], "status": "Exists in LSDS"})
-            elif flag2.get('flag') is not None:
-                failed_list.append({"imei": data['imei'], "status": "Exists in CPLC"})
+            if flag is not None:
+                failed_list.append({"imei": data['imei'], "status": "Exists in LSDS, reported at %(created_at)s with tracking id %(id)s.".format(created_at=flag.get('created_at').strftime("%Y-%m-%d %H:%M:%S"), id=flag.get('tracking_id'))})
+            elif flag2 is not None:
+                failed_list.append({"imei": data['imei'], "status": "Exists in CPLC , reported at %(created_at)s".format(created_at=flag2.get('created_at').strftime("%Y-%m-%d %H:%M:%S"))})
             else:
                 subscribers = CommonResources.subscribers(data['imei'])
                 if subscribers['subscribers']:

@@ -111,11 +111,9 @@ class Case(db.Model):
         """Check if data already exists."""
         try:
             for imei in imeis:
-                flag = db.session.query(DeviceImei).join(DeviceImei.devicedetails).join(DeviceDetails.case).\
-                    filter(and_(or_(Case.case_status == 3, Case.case_status == 2), DeviceImei.imei == imei)).first()
-                if flag:
-                    return {'flag': flag, 'imei': imei}
-            return {'flag': None, 'imei': None}
+                flag = db.session.execute("select device_imei.imei, c.created_at, c.tracking_id from device_imei join public.device_details as dd on device_imei.device_id = dd.id join public.case as c on dd.case_id = c.id where device_imei.imei='"+imei+"' and (c.case_status = 3 or c.case_status = 2) limit 1;")
+                for row in flag:
+                    return dict((col, val) for col, val in row.items())
         except Exception:
             db.session.rollback()
             raise Exception
@@ -128,10 +126,10 @@ class Case(db.Model):
             db.session.execute(trigger)
             flag = Case.find_data(args['device_details']['imeis'])
             cplc_flag = Cplc.find_cplc_data(args['device_details']['imeis'])
-            if flag.get('flag') is not None:
-                return {"code": CODES.get('CONFLICT'), "data": flag.get('imei')}
+            if flag is not None:
+                return {"code": CODES.get('CONFLICT'), "data": flag}
             elif cplc_flag.get('flag') is not None:
-                return {"code": CODES.get('ALREADY_REPORTED'), "data": cplc_flag.get('imei')}
+                return {"code": CODES.get('ALREADY_REPORTED'), "data": cplc_flag}
             else:
                 case = cls(args)
                 db.session.add(case)

@@ -142,8 +142,8 @@ class Cplc(db.Model):
             for imei in imeis:
                 flag = Cplc.get_case(imei)
                 if flag and flag.get('status') == 2:
-                    return {'flag': flag, 'imei': imei}
-            return {'flag': None, 'imei': None}
+                    return flag
+            return flag
         except Exception:
             db.session.rollback()
             raise Exception
@@ -155,8 +155,8 @@ class Cplc(db.Model):
             for imei in imeis:
                 flag = Cplc.get_case(imei)
                 if flag:
-                    return {'flag': flag, 'imei': imei}
-            return {'flag': None, 'imei': None}
+                    return flag
+            return flag
         except Exception:
             db.session.rollback()
             raise Exception

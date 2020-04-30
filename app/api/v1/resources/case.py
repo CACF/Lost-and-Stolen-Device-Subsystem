@@ -270,7 +270,7 @@ class InsertCase(MethodResource):
             tracking_id = Case.create(kwargs)
             if tracking_id.get('code') == 409:
                 data = {
-                    'message': _('IMEI: %(imei)s is a duplicate entry.', imei=tracking_id.get('data')),
+                    'message': _('IMEI: %(imei)s is a duplicate entry already reported at %(created_at)s with tracking id %(id)s.', imei=tracking_id.get('data')['imei'], created_at=tracking_id.get('data')['created_at'].strftime("%Y-%m-%d %H:%M:%S"), id=tracking_id.get('data')['tracking_id']),
                 }
                 response = Response(json.dumps(data), status=CODES.get("CONFLICT"),
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))
