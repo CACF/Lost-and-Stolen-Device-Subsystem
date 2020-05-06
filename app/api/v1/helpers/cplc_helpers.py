@@ -18,6 +18,7 @@ from app import app
 import pandas as pd
 import uuid
 import tempfile
+import requests
 from ..models.cplc import Cplc
 from ..models.case import Case
 from ..helpers.common_resources import CommonResources
@@ -48,23 +49,28 @@ class CplcCommonResources:
             flag = Case.find_data([data['imei']])
             flag2 = Cplc.find_cplc_data([data['imei']])
             if flag is not None:
+                CplcCommonResources.notify_users(data, app.config['dev_config']['SMSC']['AlreadyExist'])
                 failed_list.append({"imei": data['imei'], "status": "Exists in LSDS, reported at %(created_at)s with tracking id %(id)s.".format(created_at=flag.get('created_at').strftime("%Y-%m-%d %H:%M:%S"), id=flag.get('tracking_id'))})
             elif flag2 is not None:
+                CplcCommonResources.notify_users(data, app.config['dev_config']['SMSC']['AlreadyExist'])
                 failed_list.append({"imei": data['imei'], "status": "Exists in CPLC , reported at %(created_at)s".format(created_at=flag2.get('created_at').strftime("%Y-%m-%d %H:%M:%S"))})
             else:
                 subscribers = CommonResources.subscribers(data['imei'])
                 if subscribers['subscribers']:
                     msisdns = [subs['msisdn'] for subs in subscribers['subscribers']]
                     if data['msisdn'] in msisdns:
-                        if Cplc.find_cplc([data['imei']])['flag'] is not None:
+                        if Cplc.find_cplc([data['imei']]) is not None:
                             Cplc.update_status(data['imei'])
                         else:
-                            Cplc.create(data['imei'], data['msisdn'], 2)
+                            Cplc.create(data['imei'], data['msisdn'], 2, data['alternate_number'])
+                        CplcCommonResources.notify_users(data, app.config['dev_config']['SMSC']['Blocked'])
                         success_list.append(data['imei'])
                     else:
                         failed_list.append({"imei": data['imei'], "status": "Data does not match"})
+                        CplcCommonResources.notify_users(data, app.config['dev_config']['SMSC']['InfoMismatched'])
                 else:
                     failed_list.append({"imei": data['imei'], "status": "Data does not match"})
+                    CplcCommonResources.notify_users(data, app.config['dev_config']['SMSC']['InfoMismatched'])
         return failed_list, success_list
 
     @staticmethod
@@ -76,11 +82,14 @@ class CplcCommonResources:
             if flag:
                 if flag.get('status') == 1:
                     failed_list.append({"imei": data['imei'], "status": "Already unblocked"})
+                    CplcCommonResources.notify_users(data, app.config['dev_config']['SMSC']['AlreadyExist'])
                 else:
                     Cplc.update_status(data['imei'])
                     success_list.append(data['imei'])
+                    CplcCommonResources.notify_users(data, app.config['dev_config']['SMSC']['Unblocked'])
             else:
                 failed_list.append({"imei": data['imei'], "status": "Does not exist"})
+                CplcCommonResources.notify_users(data, app.config['dev_config']['SMSC']['DoesNotExist'])
         return failed_list, success_list
 
     @staticmethod
@@ -99,3 +108,12 @@ class CplcCommonResources:
             app.logger.info("Error occurred while generating report.")
             app.logger.exception(e)
             raise e
+
+    @staticmethod
+    def notify_users(data, message):
+        return requests.get('{base}?username={username}&password={password}&to={to}&text={text}&from={from_no}'.
+                            format(base=app.config['dev_config']['SMSC']['BaseUrl'],
+                                   username=app.config['dev_config']['SMSC']['Username'],
+                                   to=data['alternate_number'], text=message,
+                                   password=app.config['dev_config']['SMSC']['Password'],
+                                   from_no=app.config['dev_config']['SMSC']['From']))

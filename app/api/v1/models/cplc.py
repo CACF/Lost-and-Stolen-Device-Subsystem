@@ -55,15 +55,17 @@ class Cplc(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     imei = db.Column(db.String(20))
     msisdn = db.Column(db.String(20))
+    alternate_number = db.Column(db.String(20))
     status = db.Column(db.Integer, db.ForeignKey('status.id'))
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
 
-    def __init__(self, imei, msisdn, status):
+    def __init__(self, imei, msisdn, status, alternate_number):
         """Constructor."""
         self.imei = imei
         self.status = status
         self.msisdn = msisdn
+        self.alternate_number = alternate_number
 
     @property
     def serialize(self):
@@ -71,6 +73,7 @@ class Cplc(db.Model):
         return {
             "imei": self.imei,
             "msisdn": self.msisdn,
+            "alternate_number": self.alternate_number,
             "created_at": self.created_at,
             "status": self.status,
             "updated_at": self.updated_at
@@ -88,10 +91,10 @@ class Cplc(db.Model):
             raise Exception
 
     @classmethod
-    def create(cls, imei, msisdn, status):
+    def create(cls, imei, msisdn, status, alternate_number):
         """Insert data into database."""
         try:
-            case = cls(imei, msisdn, status)
+            case = cls(imei, msisdn, status, alternate_number)
             db.session.add(case)
             db.session.commit()
             return CODES.get('OK')
