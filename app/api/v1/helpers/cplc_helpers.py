@@ -93,13 +93,13 @@ class CplcCommonResources:
         return failed_list, success_list
 
     @staticmethod
-    def generate_report(failed_list, invalid_data):
+    def generate_report(failed_list, invalid_data, report_name):
         """Return non compliant report for DVS bulk request."""
         try:
             final_list = failed_list+invalid_data
             if final_list:
                 complaint_report = pd.DataFrame(final_list)
-                report_name = 'cplc_failed_imeis' + str(uuid.uuid4()) + '.tsv'
+                report_name = report_name + str(uuid.uuid4()) + '.tsv'
                 complaint_report.to_csv(os.path.join(app.config['dev_config']['UPLOADS']['report_dir'], report_name), sep= '\t')
             else:
                 report_name = "report not generated."

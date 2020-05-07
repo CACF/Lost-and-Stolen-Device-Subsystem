@@ -35,11 +35,17 @@ class CeleryTasks:
             total = len(cases)
             # send records for summary generation
             with app.request_context({'wsgi.url_scheme': "", 'SERVER_PORT': "", 'SERVER_NAME': "", 'REQUEST_METHOD': ""}):
-                remaining_cases = CommonResources.get_seen_with(cases)
-                CommonResources.notify_users(remaining_cases)
-
-            return {"response": {"result": str(total-len(remaining_cases)) +" has been blocked, rest has been sent notified."},
-                    "task_id": celery.current_task.request.id}
+                remaining_cases, success_list, failed_list = CommonResources.get_seen_with(cases)
+                notified = CommonResources.notify_users(remaining_cases)
+                report = CplcCommonResources.generate_report(failed_list, notified, "lsds_block_failed")
+                response = {"Success": total-len(remaining_cases),
+                            "notified": len(remaining_cases),
+                            "failed": len(failed_list),
+                            "report_name": report}
+            return {
+                "response": response,
+                "task_id": celery.current_task.request.id
+            }
         except Exception as e:
             app.logger.exception(e)
             return {"response": {}, "task_id": celery.current_task.request.id}
@@ -65,7 +71,7 @@ class CeleryTasks:
     def cplc_block(file):
         clean_data, invalid_data = CplcCommonResources.clean_data(file)
         failed_list, success_list = CplcCommonResources.block(clean_data)
-        report = CplcCommonResources.generate_report(failed_list, invalid_data)
+        report = CplcCommonResources.generate_report(failed_list, invalid_data, "cplc_block_failed")
         return {
             "response": {
                 "success": len(success_list),
@@ -80,7 +86,7 @@ class CeleryTasks:
     def cplc_unblock(file):
         clean_data, invalid_data = CplcCommonResources.clean_data(file)
         failed_list, success_list = CplcCommonResources.unblock(clean_data)
-        report = CplcCommonResources.generate_report(failed_list, invalid_data)
+        report = CplcCommonResources.generate_report(failed_list, invalid_data, "cplc_unblock_failed")
         return {
             "response": {
                 "success": len(success_list),

@@ -211,6 +211,8 @@ class CommonResources:
 
     @staticmethod
     def get_seen_with(cases):
+        success_list = []
+        failed_list = []
         for case in cases:
             if case['get_blocked']:
                 for imei in case['device_details']['imeis']:
@@ -221,14 +223,16 @@ class CommonResources:
                             result.case_status = 2
                             db.session.commit()
                             cases.remove(case)
+                            success_list.append(imei)
                         else:
-                            pass
+                            failed_list.append({"imei": imei, "status": "Data does not match"})
             else:
-                pass
-        return cases
+                failed_list.append({"imei": case['device_details']['imeis'], "status": "IMEI cannot be blocked, Get Blocked is False"})
+        return cases, success_list, failed_list
 
     @staticmethod
     def notify_users(cases):
+        notified = []
         if cases:
             for case in cases:
                 requests.get('{base}?username={username}&password={password}&to={to}&text={text}&from={from_no}'.
@@ -238,6 +242,7 @@ class CommonResources:
                                     text=app.config['dev_config']['SMSC']['Text'],
                                     password=app.config['dev_config']['SMSC']['Password'],
                                     from_no=app.config['dev_config']['SMSC']['From']))
+                notified.append({"imei": case['device_details']['imeis'], "status": "User has been notified"})
+            return notified
         else:
-            print("no users to be notified.")
-        return None
+            return cases
