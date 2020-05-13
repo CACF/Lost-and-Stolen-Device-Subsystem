@@ -149,7 +149,7 @@ class Case(db.Model):
 
                     db.session.commit()
                     case = Case.query.filter_by(tracking_id=case.tracking_id).first()
-                    ElasticSearchResource.insert_doc(case.serialize)
+                    ElasticSearchResource.insert_doc(case.serialize, "LSDS")
                     return {"code": CODES.get('OK'), "data": case.tracking_id}
                 else:
                     return {"code": CODES.get('BAD_REQUEST')}

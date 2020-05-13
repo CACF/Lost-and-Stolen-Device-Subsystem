@@ -48,6 +48,7 @@
 from sqlalchemy.orm.collections import InstrumentedList
 from app import db
 from ..assets.response import CODES
+from .eshelper import ElasticSearchResource
 
 
 class Cplc(db.Model):
@@ -76,7 +77,8 @@ class Cplc(db.Model):
             "alternate_number": self.alternate_number,
             "created_at": self.created_at,
             "status": self.status,
-            "updated_at": self.updated_at
+            "updated_at": self.updated_at,
+            "tracking_id": self.id
             }
 
     # pass instrumented list object to get string value
@@ -97,6 +99,25 @@ class Cplc(db.Model):
             case = cls(imei, msisdn, status, alternate_number)
             db.session.add(case)
             db.session.commit()
+            document = Cplc.get_case(imei)
+            doc = {
+                "device_details": {
+                    "imeis": [document['imei']],
+                    "msisdns": [document['msisdn']]
+                },
+                "incident_details": {},
+                "get_blocked": {},
+                "updated_at": document['updated_at'],
+                "created_at": document['created_at'],
+                "personal_details": {
+                    "alternate_number": document['alternate_number']
+                },
+                "tracking_id": document['tracking_id'],
+                "creator": {},
+                "status": document['status'],
+                "comments": {}
+            }
+            ElasticSearchResource.insert_doc(doc, "CPLC")
             return CODES.get('OK')
         except Exception:
             db.session.rollback()
@@ -126,10 +147,14 @@ class Cplc(db.Model):
                     case.status = 1
                     case.updated_at = db.func.now()
                     db.session.commit()
+                    ElasticSearchResource.update_doc(case.id, {"doc": {
+                        "status": "Recovered" if case.status == 1 else "Blocked" if case.status == 2 else "Pending"}})
                 elif case.status == 1:
                     case.status = 2
                     case.updated_at = db.func.now()
                     db.session.commit()
+                    ElasticSearchResource.update_doc(case.id, {"doc": {
+                        "status": "Recovered" if case.status == 1 else "Blocked" if case.status == 2 else "Pending"}})
                 else:
                     return CODES.get('NOT_ACCEPTABLE')
         except Exception:

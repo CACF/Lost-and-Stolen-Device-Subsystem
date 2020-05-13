@@ -117,3 +117,48 @@ class CplcCommonResources:
                                    to=data['alternate_number'], text=message,
                                    password=app.config['dev_config']['SMSC']['Password'],
                                    from_no=app.config['dev_config']['SMSC']['From']))
+
+    @staticmethod
+    def serialize_cplc_cases(cases):
+        """Serialize response."""
+        case_list = []
+        for row in cases:
+            case_list.append(dict((col, val) for col, val in row.items()))
+        cases = []
+        for case in case_list:
+            case_detail = {
+                "get_blocked": case.get('get_blocked'),
+                "creator": {
+                    "user_id": case.get('user_id'),
+                    "username": case.get('username')
+                },
+                "personal_details": {
+                    "address": case.get('address'),
+                    "gin": case.get('gin'),
+                    "email": case.get('email'),
+                    "number": case.get('alternate_number'),
+                    "full_name": case.get('full_name'),
+                    "father_name": case.get('father_name'),
+                    "mother_name": case.get('mother_name'),
+                    "district": case.get('district')
+                },
+                "tracking_id": str(case.get('id')),
+                "comments": case.get('comments'),
+                "incident_details": {
+                    "incident_date": case.get('date_of_incident'),
+                    "incident_nature": case.get('incident_type')
+                },
+                "created_at": case.get('created_at').strftime("%Y-%m-%d %H:%M:%S"),
+                "device_details": {
+                    "description": case.get('physical_description'),
+                    "model_name": case.get('model_name'),
+                    "imeis": [case.get('imei').replace(' ','')],
+                    "msisdns": [case.get('msisdn').replace(' ','')],
+                    "brand": case.get('brand')
+                },
+                "status": "Recovered" if case.get("status") == 1 else "Blocked" if case.get("status") == 2 else "Pending",
+                "updated_at": case.get('updated_at').strftime("%Y-%m-%d %H:%M:%S"),
+                "source": "CPLC"
+            }
+            cases.append(case_detail)
+        return cases

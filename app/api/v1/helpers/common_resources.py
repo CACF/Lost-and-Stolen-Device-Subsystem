@@ -194,7 +194,8 @@ class CommonResources:
                     "brand": case.get('brand')
                 },
                 "status": _(case.get('status')),
-                "updated_at": case.get('updated_at').strftime("%Y-%m-%d %H:%M:%S")
+                "updated_at": case.get('updated_at').strftime("%Y-%m-%d %H:%M:%S"),
+                "source": "LSDS"
             }
 
             cases.append(case_detail)

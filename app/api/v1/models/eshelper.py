@@ -33,7 +33,7 @@ class ElasticSearchResource:
         return es.indices.create(index=app.config['dev_config']['Database']['Database'], ignore=400, body=mapping)
 
     @staticmethod
-    def insert_doc(document):
+    def insert_doc(document, source):
         try:
             new_doc = {
                 "device_details": document['device_details'],
@@ -45,7 +45,8 @@ class ElasticSearchResource:
                 "tracking_id": document['tracking_id'],
                 "creator": document['creator'],
                 "status": document['status'],
-                "comments": document['comments']
+                "comments": document['comments'],
+                "source": source
             }
             es.index(index='lsds', id=document['tracking_id'], body=new_doc)
             return None
