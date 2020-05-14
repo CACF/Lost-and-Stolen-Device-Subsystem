@@ -126,6 +126,7 @@ class SearchArgsSchema(Schema):
     """Search arguments schema."""
     tracking_id = fields.Str()
     status = fields.Str()
+    source = fields.Str()
     updated_at = fields.Str()
     imeis = fields.List(fields.Str())
     msisdns = fields.List(fields.Str())
@@ -169,6 +170,7 @@ class SearchResponseSchemaES(Schema):
     creator = fields.Dict(attribute='creator')
     device_details = fields.Dict(attribute='device_details')
     comments = fields.List(fields.Dict(), attribute='comments')
+    source = fields.Str(attribute='source')
 
     @pre_dump
     def serialize_data(self, data):
