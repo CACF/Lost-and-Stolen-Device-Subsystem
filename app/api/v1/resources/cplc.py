@@ -49,23 +49,27 @@ class BlockCases(MethodResource):
                 'AllowedTypes'] and '.' in filename and filename.rsplit('.', 1)[1].lower() in \
                     app.config['system_config']['allowed_file_types']['AllowedExt']:  # validate file type
                 cplc_file = pd.read_csv(filepath, index_col=False).astype(str)
-                response = []
-                if args.get('action') == "block":
-                    response = (CeleryTasks.cplc_block.s(list(cplc_file.T.to_dict().values())) | CeleryTasks.log_results.s(input="file")).apply_async()
-                if args.get('action') == "unblock":
-                    response = (CeleryTasks.cplc_unblock.s(list(cplc_file.T.to_dict().values())) | CeleryTasks.log_results.s(input="file")).apply_async()
-                summary_data = {
-                    "tracking_id": response.parent.id,
-                    "status": response.state,
-                    "input": "file"
-                }
-                Summary.create(summary_data)
-                data = {
-                    "message": _("You can track your request using this id"),
-                    "task_id": response.parent.id,
-                    "state": response.state
-                }
-                return Response(json.dumps(data), status=CODES.get('OK'), mimetype=MIME_TYPES.get('APPLICATION_JSON'))
+                if 'alternate_number' in cplc_file.columns:
+                    response = []
+                    if args.get('action') == "block":
+                        response = (CeleryTasks.cplc_block.s(list(cplc_file.T.to_dict().values())) | CeleryTasks.log_results.s(input="file")).apply_async()
+                    if args.get('action') == "unblock":
+                        response = (CeleryTasks.cplc_unblock.s(list(cplc_file.T.to_dict().values())) | CeleryTasks.log_results.s(input="file")).apply_async()
+                    summary_data = {
+                        "tracking_id": response.parent.id,
+                        "status": response.state,
+                        "input": "file"
+                    }
+                    Summary.create(summary_data)
+                    data = {
+                        "message": _("You can track your request using this id"),
+                        "task_id": response.parent.id,
+                        "state": response.state
+                    }
+                    return Response(json.dumps(data), status=CODES.get('OK'), mimetype=MIME_TYPES.get('APPLICATION_JSON'))
+                else:
+                    return custom_response(_("Alterate Number column missing"), CODES.get('BAD_REQUEST'),
+                                           MIME_TYPES.get('JSON'))
             else:
                 return custom_response(_("System only accepts tsv/csv files."), CODES.get('BAD_REQUEST'), MIME_TYPES.get('JSON'))
         except Exception as e:

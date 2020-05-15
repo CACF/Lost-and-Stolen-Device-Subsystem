@@ -35,10 +35,14 @@ class CplcCommonResources:
 
     @staticmethod
     def clean_data(data):
-        data = pd.DataFrame(data)
+        data = pd.DataFrame(data).astype(str)
         matched = data['imei'].str.match('^[a-fA-F0-9]{14,16}$')
-        filtered_data = data[matched].T.to_dict().values()
+        filtered_data = list(data[matched].T.to_dict().values())
         invalid_data = [{"imei": d['imei'], "status": "Invalid Data"} for d in data[~matched].T.to_dict().values()]
+        for data in filtered_data:
+            if data['alternate_number']=='nan':
+                invalid_data.append({"imei": data['imei'], "status": "Missing alternate number"})
+                filtered_data.remove(data)
         return filtered_data, invalid_data
 
     @staticmethod
@@ -50,10 +54,10 @@ class CplcCommonResources:
             flag2 = Cplc.find_cplc_data([data['imei']])
             if flag is not None:
                 CplcCommonResources.notify_users(data, app.config['dev_config']['SMSC']['AlreadyExist'])
-                failed_list.append({"imei": data['imei'], "status": "Exists in LSDS, reported at %(created_at)s with tracking id %(id)s.".format(created_at=flag.get('created_at').strftime("%Y-%m-%d %H:%M:%S"), id=flag.get('tracking_id'))})
+                failed_list.append({"imei": data['imei'], "status": "Exists in LSDS, reported at "+flag.get('created_at').strftime("%Y-%m-%d %H:%M:%S")+" with tracking id "+flag.get('tracking_id')+"."})
             elif flag2 is not None:
                 CplcCommonResources.notify_users(data, app.config['dev_config']['SMSC']['AlreadyExist'])
-                failed_list.append({"imei": data['imei'], "status": "Exists in CPLC , reported at %(created_at)s".format(created_at=flag2.get('created_at').strftime("%Y-%m-%d %H:%M:%S"))})
+                failed_list.append({"imei": data['imei'], "status": "Exists in CPLC , reported at "+flag2.get('created_at').strftime("%Y-%m-%d %H:%M:%S")})
             else:
                 subscribers = CommonResources.subscribers(data['imei'])
                 if subscribers['subscribers']:
@@ -67,10 +71,10 @@ class CplcCommonResources:
                         success_list.append(data['imei'])
                     else:
                         failed_list.append({"imei": data['imei'], "status": "Data does not match"})
-                        CplcCommonResources.notify_users(data, app.config['dev_config']['SMSC']['InfoMismatched'])
+                        CplcCommonResources.notify_users(data, app.config['dev_config']['SMSC']['InfoMismatch'])
                 else:
                     failed_list.append({"imei": data['imei'], "status": "Data does not match"})
-                    CplcCommonResources.notify_users(data, app.config['dev_config']['SMSC']['InfoMismatched'])
+                    CplcCommonResources.notify_users(data, app.config['dev_config']['SMSC']['InfoMismatch'])
         return failed_list, success_list
 
     @staticmethod
