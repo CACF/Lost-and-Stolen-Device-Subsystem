@@ -171,7 +171,7 @@ class Cplc(db.Model):
                 flag = Cplc.get_case(imei)
                 if flag and flag.get('status') == 2:
                     return flag
-            return None
+            return {}
         except Exception:
             db.session.rollback()
             raise Exception
@@ -184,7 +184,7 @@ class Cplc(db.Model):
                 flag = Cplc.get_case(imei)
                 if flag:
                     return flag
-            return None
+            return {}
         except Exception:
             db.session.rollback()
             raise Exception
