@@ -130,7 +130,6 @@ class SearchArgsSchema(Schema):
     updated_at = fields.Str()
     imeis = fields.List(fields.Str())
     msisdns = fields.List(fields.Str())
-    dob = fields.Str()
     email = fields.Str()
     alternate_number = fields.Str()
     full_name = fields.Str()
