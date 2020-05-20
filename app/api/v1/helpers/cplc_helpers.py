@@ -52,10 +52,10 @@ class CplcCommonResources:
         for data in filtered_data:
             flag = Case.find_data([data['imei']])
             flag2 = Cplc.find_cplc_data([data['imei']])
-            if flag is not None:
+            if flag:
                 CplcCommonResources.notify_users(data, app.config['dev_config']['SMSC']['AlreadyExist'])
                 failed_list.append({"imei": data['imei'], "status": "Exists in LSDS, reported at "+flag.get('created_at').strftime("%Y-%m-%d %H:%M:%S")+" with tracking id "+flag.get('tracking_id')+"."})
-            elif flag2 is not None:
+            elif flag2:
                 CplcCommonResources.notify_users(data, app.config['dev_config']['SMSC']['AlreadyExist'])
                 failed_list.append({"imei": data['imei'], "status": "Exists in CPLC , reported at "+flag2.get('created_at').strftime("%Y-%m-%d %H:%M:%S")})
             else:
