@@ -63,7 +63,7 @@ class CplcCommonResources:
                 if subscribers['subscribers']:
                     msisdns = [subs['msisdn'] for subs in subscribers['subscribers']]
                     if data['msisdn'] in msisdns:
-                        if Cplc.find_cplc([data['imei']]) is not None:
+                        if Cplc.find_cplc([data['imei']]):
                             Cplc.update_status(data['imei'])
                         else:
                             Cplc.create(data['imei'], data['msisdn'], 2, data['alternate_number'])
