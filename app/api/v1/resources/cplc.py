@@ -48,7 +48,7 @@ class BlockCases(MethodResource):
             if mimetype in app.config['system_config']['allowed_file_types'][
                 'AllowedTypes'] and '.' in filename and filename.rsplit('.', 1)[1].lower() in \
                     app.config['system_config']['allowed_file_types']['AllowedExt']:  # validate file type
-                cplc_file = pd.read_csv(filepath, index_col=False).astype(str)
+                cplc_file = pd.read_csv(filepath, index_col=False, dtype=str).astype(str)
                 if 'alternate_number' in cplc_file.columns:
                     response = []
                     if args.get('action') == "block":
