@@ -68,7 +68,7 @@ class BlockCases(MethodResource):
                     }
                     return Response(json.dumps(data), status=CODES.get('OK'), mimetype=MIME_TYPES.get('APPLICATION_JSON'))
                 else:
-                    return custom_response(_("Alterate Number column missing"), CODES.get('BAD_REQUEST'),
+                    return custom_response(_("Alternate Number column missing"), CODES.get('BAD_REQUEST'),
                                            MIME_TYPES.get('JSON'))
             else:
                 return custom_response(_("System only accepts tsv/csv files."), CODES.get('BAD_REQUEST'), MIME_TYPES.get('JSON'))
