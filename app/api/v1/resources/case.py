@@ -277,7 +277,7 @@ class InsertCase(MethodResource):
                 return response
             if tracking_id.get('code') == 208:
                 data = {
-                    'message': _('IMEI: %(imei)s is already reported and blocked through CPLC.', imei=tracking_id.get('data')),
+                    'message': _('IMEI: %(imei)s is already reported and blocked through CPLC.', imei=tracking_id.get('data').get('imei')),
                 }
                 response = Response(json.dumps(data), status=CODES.get("ALREADY_REPORTED"),
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))

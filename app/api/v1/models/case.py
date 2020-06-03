@@ -126,9 +126,9 @@ class Case(db.Model):
             db.session.execute(trigger)
             flag = Case.find_data(args['device_details']['imeis'])
             cplc_flag = Cplc.find_cplc_data(args['device_details']['imeis'])
-            if flag is not None:
+            if flag:
                 return {"code": CODES.get('CONFLICT'), "data": flag}
-            elif cplc_flag.get('flag') is not None:
+            elif cplc_flag:
                 return {"code": CODES.get('ALREADY_REPORTED'), "data": cplc_flag}
             else:
                 case = cls(args)
