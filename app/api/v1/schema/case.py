@@ -38,12 +38,12 @@ class PersonalDetailsSchema(Schema):
     """Personal details schema."""
     full_name = fields.Str(required=True, validate=lambda p: validate_fullname(val=p, name="Fullname"))
     gin = fields.Str(required=True, validate=validate_gin)
-    address = fields.Str(required=True, validate=validate_address)
+    address = fields.Str(validate=validate_address)
     email = fields.Str(validate=validate_email)
     number = fields.Str(required=True, validate=validate_number)
     father_name = fields.Str(required=True, validate=lambda p: validate_fullname(val=p, name="Father name"))
     mother_name = fields.Str(required=True, validate=lambda p: validate_fullname(val=p, name="Mother name"))
-    district = fields.Str(validate=lambda p: validate_fullname(val=p, name="District name"))
+    district = fields.Str(required=True, validate=lambda p: validate_fullname(val=p, name="District name"))
     landline_number = fields.Str(validate=validate_number)
 
 
