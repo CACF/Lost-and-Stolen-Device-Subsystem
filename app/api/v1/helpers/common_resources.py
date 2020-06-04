@@ -226,24 +226,25 @@ class CommonResources:
                             cases.remove(case)
                             success_list.append(imei)
                         else:
-                            failed_list.append({"imei": imei, "status": "Data does not match"})
+                            failed_list.append({"imei": imei, "status": "Data does not match, User has been notified"})
             else:
-                failed_list.append({"imei": case['device_details']['imeis'], "status": "IMEI cannot be blocked, Get Blocked is False"})
+                failed_list.append({"imei": case['device_details']['imeis'], "status": "IMEI cannot be blocked, Get Blocked is False. User has been notified"})
         return cases, success_list, failed_list
 
     @staticmethod
     def notify_users(cases):
-        notified = []
+        failed_to_notify = []
         if cases:
             for case in cases:
-                requests.get('{base}?username={username}&password={password}&to={to}&text={text}&from={from_no}'.
+                response = requests.get('{base}?username={username}&password={password}&to={to}&text={text}&from={from_no}'.
                              format(base=app.config['dev_config']['SMSC']['BaseUrl'],
                                     username=app.config['dev_config']['SMSC']['Username'],
                                     to=case['personal_details']['number'],
                                     text=app.config['dev_config']['SMSC']['Text'],
                                     password=app.config['dev_config']['SMSC']['Password'],
                                     from_no=app.config['dev_config']['SMSC']['From']))
-                notified.append({"imei": case['device_details']['imeis'], "status": "User has been notified"})
-            return notified
+                if response.status_code != 202:
+                    failed_to_notify.append({"imei": case['device_details']['imeis'], "status": "User could not been notified because "+response.text})
+            return failed_to_notify
         else:
             return cases

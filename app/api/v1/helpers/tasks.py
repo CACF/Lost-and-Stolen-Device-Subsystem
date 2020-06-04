@@ -36,11 +36,11 @@ class CeleryTasks:
             # send records for summary generation
             with app.request_context({'wsgi.url_scheme': "", 'SERVER_PORT': "", 'SERVER_NAME': "", 'REQUEST_METHOD': ""}):
                 remaining_cases, success_list, failed_list = CommonResources.get_seen_with(cases)
-                notified = CommonResources.notify_users(remaining_cases)
-                report = CplcCommonResources.generate_report(failed_list, notified, "lsds_block_failed")
-                response = {"Success": total-len(remaining_cases),
-                            "notified": len(remaining_cases),
+                failed_to_notify = CommonResources.notify_users(remaining_cases)
+                report = CplcCommonResources.generate_report(failed_list, failed_to_notify, "lsds_block_failed")
+                response = {"success": len(success_list),
                             "failed": len(failed_list),
+                            "notification_failed": len(failed_to_notify),
                             "report_name": report}
             return {
                 "response": response,

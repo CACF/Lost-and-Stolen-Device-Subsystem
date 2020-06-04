@@ -127,9 +127,9 @@ class Case(db.Model):
             flag = Case.find_data(args['device_details']['imeis'])
             cplc_flag = Cplc.find_cplc_data(args['device_details']['imeis'])
             if flag:
-                return {"code": CODES.get('CONFLICT'), "data": flag}
+                return {"code": CODES.get('CONFLICT'), "data": flag, "reason": "LSDS"}
             elif cplc_flag:
-                return {"code": CODES.get('ALREADY_REPORTED'), "data": cplc_flag}
+                return {"code": CODES.get('CONFLICT'), "data": cplc_flag, "reason": "CPLC"}
             else:
                 case = cls(args)
                 db.session.add(case)
