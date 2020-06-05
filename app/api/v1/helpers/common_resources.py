@@ -218,16 +218,16 @@ class CommonResources:
             if case['get_blocked']:
                 for imei in case['device_details']['imeis']:
                     subscribers = CommonResources.subscribers(imei)
-                    if subscribers:
-                        for subs in subscribers['subscribers']:
-                            if subs['msisdn'] in case['device_details']['msisdns']:
-                                result = db.session.query(Case).filter_by(tracking_id=case['tracking_id']).first()
-                                result.case_status = 2
-                                db.session.commit()
-                                cases.remove(case)
-                                success_list.append(imei)
-                            else:
-                                failed_list.append({"imei": imei, "status": "Data does not match, User has been notified"})
+                    msisdn = [subs['msisdn'] for subs in subscribers['subscribers']]
+                    if msisdn:
+                        if (set(case['device_details']['msisdns']) & set(msisdn)):
+                            result = db.session.query(Case).filter_by(tracking_id=case['tracking_id']).first()
+                            result.case_status = 2
+                            db.session.commit()
+                            cases.remove(case)
+                            success_list.append(imei)
+                        else:
+                            failed_list.append({"imei": imei, "status": "Data does not match, User has been notified"})
                     else:
                         failed_list.append({"imei": imei, "status": "IMEI couldn't be seen on network, User has been notified"})
             else:
