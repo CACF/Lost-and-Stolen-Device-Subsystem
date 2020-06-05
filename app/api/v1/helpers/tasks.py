@@ -32,7 +32,6 @@ class CeleryTasks:
         """Celery task for bulk request processing."""
         try:
             cases = CommonResources.get_pending_cases()
-            total = len(cases)
             # send records for summary generation
             with app.request_context({'wsgi.url_scheme': "", 'SERVER_PORT': "", 'SERVER_NAME': "", 'REQUEST_METHOD': ""}):
                 remaining_cases, success_list, failed_list = CommonResources.get_seen_with(cases)
