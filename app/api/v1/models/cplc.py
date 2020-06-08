@@ -49,6 +49,7 @@ from sqlalchemy.orm.collections import InstrumentedList
 from app import db
 from ..assets.response import CODES
 from .eshelper import ElasticSearchResource
+from datetime import datetime
 
 
 class Cplc(db.Model):
@@ -107,14 +108,14 @@ class Cplc(db.Model):
                 },
                 "incident_details": {},
                 "get_blocked": True,
-                "updated_at": document['updated_at'],
-                "created_at": document['created_at'],
+                "updated_at": document['updated_at'].strftime("%Y-%m-%d %H:%M:%S"),
+                "created_at": document['created_at'].strftime("%Y-%m-%d %H:%M:%S"),
                 "personal_details": {
                     "alternate_number": document['alternate_number']
                 },
                 "tracking_id": document['tracking_id'],
                 "creator": {},
-                "status": document['status'],
+                "status": "Recovered" if document['status'] == 1 else "Blocked" if document['status'] == 2 else "Pending",
                 "comments": {}
             }
             ElasticSearchResource.insert_doc(doc, "CPLC")
@@ -148,13 +149,15 @@ class Cplc(db.Model):
                     case.updated_at = db.func.now()
                     db.session.commit()
                     ElasticSearchResource.update_doc(case.id, {"doc": {
-                        "status": "Recovered" if case.status == 1 else "Blocked" if case.status == 2 else "Pending"}})
+                        "status": "Recovered" if case.status == 1 else "Blocked" if case.status == 2 else "Pending",
+                    "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}})
                 elif case.status == 1:
                     case.status = 2
                     case.updated_at = db.func.now()
                     db.session.commit()
                     ElasticSearchResource.update_doc(case.id, {"doc": {
-                        "status": "Recovered" if case.status == 1 else "Blocked" if case.status == 2 else "Pending"}})
+                        "status": "Recovered" if case.status == 1 else "Blocked" if case.status == 2 else "Pending",
+                    "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}})
                 else:
                     return CODES.get('NOT_ACCEPTABLE')
         except Exception:

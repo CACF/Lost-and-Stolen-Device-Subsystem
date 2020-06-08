@@ -167,7 +167,7 @@ class Case(db.Model):
             case = cls.query.filter_by(tracking_id=tracking_id).first()
             case.updated_at = db.func.now()
             db.session.commit()
-            ElasticSearchResource.update_doc(case.tracking_id, {"doc" : {"updated_at": datetime.now()}})
+            ElasticSearchResource.update_doc(case.tracking_id, {"doc" : {"updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}})
         except Exception:
             db.session.rollback()
             raise Exception
