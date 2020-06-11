@@ -13,7 +13,7 @@ Redistribution and use in source and binary forms, with or without modification,
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                                                               #
 """
 
-from app import db
+from app import db, app
 from app.api.v1.models.eshelper import es
 from app.api.v1.helpers.common_resources import CommonResources
 from app.api.v1.helpers.cplc_helpers import CplcCommonResources
@@ -46,7 +46,7 @@ class DataMigration:
                             new_case[k] = v
                 else:
                     new_case[k] = v
-            new_list.append({"index": {"_index": "lsds", "_type": "_doc", "_id": new_case['tracking_id']}})
+            new_list.append({"index": {"_index": app.config['dev_config']['Database']['Database'], "_type": "_doc", "_id": new_case['tracking_id']}})
             new_list.append(new_case)
         return new_list
 
@@ -91,5 +91,5 @@ class DataMigration:
         cases = DataMigration.fetch_data()
         for i, case in enumerate(cases):
             cleaned_case = DataMigration.clean_data_send(case)
-            es.index(index='lsds', id=cleaned_case['tracking_id'], body=cleaned_case)
+            es.index(index=app.config['dev_config']['Database']['Database'], id=cleaned_case['tracking_id'], body=cleaned_case)
         return str(len(cases)) + " inserted successfully."

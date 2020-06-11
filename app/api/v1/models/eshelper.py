@@ -48,7 +48,7 @@ class ElasticSearchResource:
                 "comments": document['comments'],
                 "source": source
             }
-            es.index(index='lsds', id=document['tracking_id'], body=new_doc)
+            es.index(index=app.config['dev_config']['Database']['Database'], id=document['tracking_id'], body=new_doc)
             return None
         except Exception as e:
             raise e
@@ -69,17 +69,17 @@ class ElasticSearchResource:
                 }
             }
         }
-        es.update(index='lsds', id=tracking_id, doc_type="_doc", body=doc)
+        es.update(index=app.config['dev_config']['Database']['Database'], id=tracking_id, doc_type="_doc", body=doc)
         return None
 
     @staticmethod
     def get_doc(tracking_id):
-        res = es.get(index='lsds', id=tracking_id)
+        res = es.get(index=app.config['dev_config']['Database']['Database'], id=tracking_id)
         return res
 
     @staticmethod
     def update_doc(tracking_id, doc_to_update):
-        es.update(index='lsds', id=tracking_id, doc_type="_doc", body=doc_to_update)
+        es.update(index=app.config['dev_config']['Database']['Database'], id=tracking_id, doc_type="_doc", body=doc_to_update)
         return None
 
     @staticmethod
@@ -101,5 +101,5 @@ class ElasticSearchResource:
                     query['query']['bool']['must'].append({"match": {"incident_details."+field: doc_to_search[field]}})
                 else:
                     query['query']['bool']['must'].append({"match": {field: doc_to_search[field]}})
-        resp = es.search(index='lsds', body=query)
+        resp = es.search(index=app.config['dev_config']['Database']['Database'], body=query)
         return resp
