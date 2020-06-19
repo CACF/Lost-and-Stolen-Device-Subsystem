@@ -27,10 +27,19 @@ class ElasticSearchResource:
         mapping = '''{
             "mappings": {
             "numeric_detection": false,
-            "date_detection": false
+            "properties": {
+              "updated_at": {
+                "type": "date",
+                "format": "yyyy-MM-dd HH:mm:ss" 
+              },
+              "created_at": {
+                "type": "date",
+                "format": "yyyy-MM-dd HH:mm:ss" 
+              }
+            }
             }
             }'''
-        return es.indices.create(index=app.config['dev_config']['Database']['Database'], ignore=400, body=mapping)
+        return es.indices.create(index=app.config['dev_config']['Database']['Database'], body=mapping)
 
     @staticmethod
     def insert_doc(document, source):
@@ -86,9 +95,13 @@ class ElasticSearchResource:
     def search_doc(doc_to_search, limit, start):
         query = {"size": 10000, "query": {"bool": {"must": []}}}
         for field in doc_to_search:
-            if field == "updated_at" or field == "date_of_incident":
+            if field == "updated_at":
                 date = doc_to_search.get(field).split(",")
-                query['query']['bool']['must'].append({"range": {field: {"gte": date[0], "lte": datetime.strptime(date[1], "%Y-%m-%d") + timedelta(hours=23, minutes=59, seconds=59)}}})
+                query['query']['bool']['must'].append({"range": {field: {"gte": date[0] + " 00:00:00",
+                                                                         "lte": date[1] + " 23:59:59"}}})
+            elif field == "date_of_incident":
+                date = doc_to_search.get(field).split(",")
+                query['query']['bool']['must'].append({"range": {"incident_details.incident_date": {"gte": date[0], "lte": date[1]}}})
             elif field == "imeis" or field == "msisdns":
                 query['query']['bool']['must'].append({"terms": {"device_details."+field: doc_to_search[field]}})
             else:
