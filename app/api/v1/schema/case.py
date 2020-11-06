@@ -40,11 +40,8 @@ class PersonalDetailsSchema(Schema):
     gin = fields.Str(required=True, validate=validate_gin)
     address = fields.Str(validate=validate_address)
     email = fields.Str(validate=validate_email)
+    dob = fields.Str(validate=validate_date)
     number = fields.Str(required=True, validate=validate_number)
-    father_name = fields.Str(required=True, validate=lambda p: validate_fullname(val=p, name="Father name"))
-    mother_name = fields.Str(required=True, validate=lambda p: validate_fullname(val=p, name="Mother name"))
-    district = fields.Str(required=True, validate=lambda p: validate_fullname(val=p, name="District name"))
-    landline_number = fields.Str(validate=validate_number)
 
 
 class IncidentDetailsSchema(Schema):
@@ -135,10 +132,6 @@ class SearchArgsSchema(Schema):
     full_name = fields.Str()
     gin = fields.Str()
     address = fields.Str()
-    father_name = fields.Str()
-    mother_name = fields.Str()
-    district = fields.Str()
-    landline_number = fields.Str()
     incident = fields.Str()
     date_of_incident = fields.Str()
     brand = fields.Str()
@@ -202,11 +195,7 @@ class SearchResponseSchema(Schema):
             "address": data.get('address'),
             "gin": data.get('gin'),
             "number": data.get('alternate_number'),
-            "email": data.get('email'),
-            "father_name": data.get('father_name'),
-            "mother_name": data.get('mother_name'),
-            "district": data.get('district'),
-            "landline_number": data.get('landline_number')
+            "email": data.get('email')
         }
         data['device_details'] = {
             "brand": data.get('brand'),
@@ -222,7 +211,7 @@ class SearchResponseSchema(Schema):
         return data
 
 
-class CplcInsertSchema(Schema):
+class BulkInsertSchema(Schema):
     """Case Insertion schema."""
     action = fields.Str(required=True, validate=lambda p: p == "block" or p == "unblock")
     file = fields.Str(description="Submit tsv/txt file path containing bulk IMEIs")

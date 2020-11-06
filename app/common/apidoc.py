@@ -46,6 +46,7 @@ class ApiDocs:
 
         return FlaskApiSpec(self.app)
 
+
     def spec_description(self):
         """Generate text for api docs description"""
         description = 'The document lists the APIs exposed by Lost Stolen Device Subsystem. '

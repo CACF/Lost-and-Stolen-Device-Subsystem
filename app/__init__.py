@@ -33,17 +33,16 @@ try:
     config.read("config.ini")
     app.config['dev_config'] = config
 
-
     global_config = yaml.safe_load(open("etc/config.yml"))
     app.config['system_config'] = global_config
 
     CeleryConf = app.config['system_config']['celery']
     db_params = {
-        'Host': app.config['dev_config']['Database']['Host'],
-        'Port': app.config['dev_config']['Database']['Port'],
-        'Database': app.config['dev_config']['Database']['Database'],
-        'User': app.config['dev_config']['Database']['UserName'],
-        'Password': app.config['dev_config']['Database']['Password']
+        'Host': app.config['system_config']['Database']['Host'],
+        'Port': app.config['system_config']['Database']['Port'],
+        'Database': app.config['system_config']['Database']['Database'],
+        'User': app.config['system_config']['Database']['UserName'],
+        'Password': app.config['system_config']['Database']['Password']
     }
 
     app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://%s:%s@%s:%s/%s' % \
@@ -52,10 +51,10 @@ try:
 
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    app.config['pool_size'] = int(app.config['dev_config']['Database']['pool_size'])
-    app.config['pool_recycle'] = int(app.config['dev_config']['Database']['pool_recycle'])
-    app.config['max_overflow'] = int(app.config['dev_config']['Database']['overflow_size'])
-    app.config['pool_timeout'] = int(app.config['dev_config']['Database']['pool_timeout'])
+    app.config['pool_size'] = int(app.config['system_config']['Database']['pool_size'])
+    app.config['pool_recycle'] = int(app.config['system_config']['Database']['pool_recycle'])
+    app.config['max_overflow'] = int(app.config['system_config']['Database']['overflow_size'])
+    app.config['pool_timeout'] = int(app.config['system_config']['Database']['pool_timeout'])
 
     db = SQLAlchemy()
     db.init_app(app)

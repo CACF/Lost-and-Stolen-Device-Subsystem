@@ -28,7 +28,9 @@ class CommonResources:
         """Return IMEI response fetched from DIRBS core."""
 
         imei_url = requests.get(
-            '{base}/{version}/imei/{imei}'.format(base=app.config['dev_config']['dirbs_core']['base_url'], version=app.config['dev_config']['dirbs_core']['version'], imei=imei))  # dirbs core imei api call
+            '{base}/{version}/imei/{imei}'.format(base=app.config['system_config']['dirbs_core']['base_url'],
+                                                  version=app.config['system_config']['dirbs_core']['version'],
+                                                  imei=imei))  # dirbs core imei api call
         try:
             if imei_url.status_code == 200:
                 response = imei_url.json()
@@ -43,7 +45,7 @@ class CommonResources:
         """Return TAC response fetched from DIRBS core."""
 
         try:
-            tac_response = requests.get('{}/{}/tac/{}'.format(app.config['dev_config']['dirbs_core']['base_url'], app.config['dev_config']['dirbs_core']['version'], tac))  # dirbs core tac api call
+            tac_response = requests.get('{}/{}/tac/{}'.format(app.config['system_config']['dirbs_core']['base_url'], app.config['system_config']['dirbs_core']['version'], tac))  # dirbs core tac api call
             if tac_response.status_code == 200:
                 resp = tac_response.json()
                 return resp
@@ -57,7 +59,7 @@ class CommonResources:
 
         try:
             reg_response = requests.get(
-                '{base}/{version}/imei/{imei}/info'.format(base=app.config['dev_config']['dirbs_core']['base_url'], version=app.config['dev_config']['dirbs_core']['version'], imei=imei))
+                '{base}/{version}/imei/{imei}/info'.format(base=app.config['system_config']['dirbs_core']['base_url'], version=app.config['system_config']['dirbs_core']['version'], imei=imei))
             if reg_response.status_code == 200:
                 resp = reg_response.json()
                 return resp
@@ -86,12 +88,12 @@ class CommonResources:
     def subscribers(imei):
         """Return subscriber's details fetched from DIRBS core."""
         try:
-            seen_with_url = requests.get('{base}/{version}/imei/{imei}/subscribers?limit=10&offset=0&order=DESC'.format(base=app.config['dev_config']['dirbs_core']['base_url'], version=app.config['dev_config']['dirbs_core']['version'], imei=imei))  # dirbs core imei api call
+            seen_with_url = requests.get('{base}/{version}/imei/{imei}/subscribers?limit=10&offset=0&order=DESC'.format(base=app.config['system_config']['dirbs_core']['base_url'], version=app.config['system_config']['dirbs_core']['version'], imei=imei))  # dirbs core imei api call
             seen_with_resp = seen_with_url.json()
             result_size = seen_with_resp.get('_keys').get('result_size')
             result = []
             if result_size>0:
-                seen_with_url = requests.get('{base}/{version}/imei/{imei}/subscribers?offset=0&order=DESC&limit={result_size}'.format(base=app.config['dev_config']['dirbs_core']['base_url'], version=app.config['dev_config']['dirbs_core']['version'],imei=imei,result_size=result_size))  # dirbs core imei api call
+                seen_with_url = requests.get('{base}/{version}/imei/{imei}/subscribers?offset=0&order=DESC&limit={result_size}'.format(base=app.config['system_config']['dirbs_core']['base_url'], version=app.config['system_config']['dirbs_core']['version'],imei=imei,result_size=result_size))  # dirbs core imei api call
                 seen_with_resp = seen_with_url.json()
                 data = seen_with_resp.get('subscribers')
                 seen = set()
@@ -240,12 +242,12 @@ class CommonResources:
         if cases:
             for case in cases:
                 response = requests.get('{base}?username={username}&password={password}&to={to}&text={text}&from={from_no}'.
-                             format(base=app.config['dev_config']['SMSC']['BaseUrl'],
-                                    username=app.config['dev_config']['SMSC']['Username'],
+                             format(base=app.config['system_config']['SMSC']['BaseUrl'],
+                                    username=app.config['system_config']['SMSC']['Username'],
                                     to=case['personal_details']['number'],
-                                    text=app.config['dev_config']['SMSC']['Text'],
-                                    password=app.config['dev_config']['SMSC']['Password'],
-                                    from_no=app.config['dev_config']['SMSC']['From']))
+                                    text=app.config['system_config']['SMSC']['Text'],
+                                    password=app.config['system_config']['SMSC']['Password'],
+                                    from_no=app.config['system_config']['SMSC']['From']))
                 if response.status_code != 202:
                     failed_to_notify.append({"imei": case['device_details']['imeis'], "status": "User could not been notified because "+response.text})
             return failed_to_notify

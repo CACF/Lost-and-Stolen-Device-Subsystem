@@ -36,7 +36,7 @@ class IncidentNature(MethodResource):
         """Return types of incidents."""
         try:
             incident_types = NatureOfIncident().query.all()
-            response = Response(IncidentNatureSchema(many=True).dumps(incident_types).data, status=CODES.get('OK'),
+            response = Response(IncidentNatureSchema(many=True).dumps(incident_types), status=CODES.get('OK'),
                                 mimetype=MIME_TYPES.get('APPLICATION_JSON'))
             return response
         except Exception as e:
@@ -62,7 +62,7 @@ class CaseStatus(MethodResource):
         """Return types of lost/stolen status."""
         try:
             case_statuses = Status().query.all()
-            response = Response(CaseStatusSchema(many=True).dumps(case_statuses).data, status=CODES.get("OK"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+            response = Response(CaseStatusSchema(many=True).dumps(case_statuses), status=CODES.get("OK"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
             return response
         except Exception as e:
             app.logger.critical("exception encountered during GET api/v1/status_types, see below logs")

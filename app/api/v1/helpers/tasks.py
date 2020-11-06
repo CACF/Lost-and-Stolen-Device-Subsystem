@@ -20,7 +20,7 @@ from celery.signals import task_postrun
 from app import celery, app, db
 from celery.result import AsyncResult
 from ..helpers.common_resources import CommonResources
-from ..helpers.cplc_helpers import CplcCommonResources
+from ..helpers.bulk_helpers import BulkCommonResources
 from ..models.summary import Summary
 
 
@@ -36,7 +36,7 @@ class CeleryTasks:
             with app.request_context({'wsgi.url_scheme': "", 'SERVER_PORT': "", 'SERVER_NAME': "", 'REQUEST_METHOD': ""}):
                 remaining_cases, success_list, failed_list = CommonResources.get_seen_with(cases)
                 failed_to_notify = CommonResources.notify_users(remaining_cases)
-                report = CplcCommonResources.generate_report(failed_list, failed_to_notify, "lsds_block_failed")
+                report = BulkCommonResources.generate_report(failed_list, failed_to_notify, "lsds_block_failed")
                 response = {"success": len(success_list),
                             "failed": len(failed_list),
                             "notification_failed": len(failed_to_notify),
@@ -67,10 +67,10 @@ class CeleryTasks:
 
     @staticmethod
     @celery.task()
-    def cplc_block(file):
-        clean_data, invalid_data = CplcCommonResources.clean_data(file)
-        failed_list, success_list = CplcCommonResources.block(clean_data)
-        report = CplcCommonResources.generate_report(failed_list, invalid_data, "cplc_block_failed")
+    def bulk_block(file):
+        clean_data, invalid_data = BulkCommonResources.clean_data(file)
+        failed_list, success_list = BulkCommonResources.block(clean_data)
+        report = BulkCommonResources.generate_report(failed_list, invalid_data, "bulk_block_failed")
         return {
             "response": {
                 "success": len(success_list),
@@ -82,10 +82,10 @@ class CeleryTasks:
 
     @staticmethod
     @celery.task()
-    def cplc_unblock(file):
-        clean_data, invalid_data = CplcCommonResources.clean_data(file)
-        failed_list, success_list = CplcCommonResources.unblock(clean_data)
-        report = CplcCommonResources.generate_report(failed_list, invalid_data, "cplc_unblock_failed")
+    def bulk_unblock(file):
+        clean_data, invalid_data = BulkCommonResources.clean_data(file)
+        failed_list, success_list = BulkCommonResources.unblock(clean_data)
+        report = BulkCommonResources.generate_report(failed_list, invalid_data, "bulk_unblock_failed")
         return {
             "response": {
                 "success": len(success_list),
@@ -101,11 +101,11 @@ class CeleryTasks:
         """Deletes reports from system after a specific time."""
         try:
             current_time = time()  # get current time
-            for f in os.listdir(app.config['dev_config']['UPLOADS']['report_dir']):  # list files in specific directory
+            for f in os.listdir(app.config['system_config']['UPLOADS']['report_dir']):  # list files in specific directory
                 creation_time = os.path.getctime(
-                    os.path.join(app.config['dev_config']['UPLOADS']['report_dir'], f))  # get creation time of each file
+                    os.path.join(app.config['system_config']['UPLOADS']['report_dir'], f))  # get creation time of each file
                 if current_time - creation_time >= app.config['system_config']['global']['ReportDeletionTime']*3600:  # compare creation time is greater than 24 hrs
-                    os.remove(os.path.join(app.config['dev_config']['UPLOADS']['report_dir'],
+                    os.remove(os.path.join(app.config['system_config']['UPLOADS']['report_dir'],
                                            f))  # if yes, delete file from directory
         except Exception as e:
             app.logger.exception(e)

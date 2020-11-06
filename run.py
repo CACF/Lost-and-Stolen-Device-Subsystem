@@ -16,4 +16,4 @@ NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS 
 from app import app
 
 if __name__ == "__main__":
-    app.run(host=str(app.config['dev_config']['Server']['Host']), port=int(app.config['dev_config']['Server']['Port']))
+    app.run(host=str(app.config['system_config']['Server']['Host']), port=int(app.config['system_config']['Server']['Port']))

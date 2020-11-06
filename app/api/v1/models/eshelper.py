@@ -16,8 +16,8 @@ from elasticsearch import Elasticsearch
 from app import app
 from datetime import datetime, timedelta
 
-es = Elasticsearch([{'host': app.config['dev_config']['ELASTIC_SEARCH']['Host'],
-                   'port': app.config['dev_config']['ELASTIC_SEARCH']['Port']}])
+es = Elasticsearch([{'host': app.config['system_config']['ELASTIC_SEARCH']['Host'],
+                   'port': app.config['system_config']['ELASTIC_SEARCH']['Port']}])
 
 
 class ElasticSearchResource:
@@ -39,7 +39,7 @@ class ElasticSearchResource:
             }
             }
             }'''
-        return es.indices.create(index=app.config['dev_config']['Database']['Database'], body=mapping)
+        return es.indices.create(index=app.config['system_config']['Database']['Database'], body=mapping)
 
     @staticmethod
     def insert_doc(document, source):
@@ -57,7 +57,7 @@ class ElasticSearchResource:
                 "comments": document['comments'],
                 "source": source
             }
-            es.index(index=app.config['dev_config']['Database']['Database'], id=document['tracking_id'], body=new_doc)
+            es.index(index=app.config['system_config']['Database']['Database'], id=document['tracking_id'], body=new_doc)
             return None
         except Exception as e:
             raise e
@@ -78,17 +78,17 @@ class ElasticSearchResource:
                 }
             }
         }
-        es.update(index=app.config['dev_config']['Database']['Database'], id=tracking_id, doc_type="_doc", body=doc)
+        es.update(index=app.config['system_config']['Database']['Database'], id=tracking_id, doc_type="_doc", body=doc)
         return None
 
     @staticmethod
     def get_doc(tracking_id):
-        res = es.get(index=app.config['dev_config']['Database']['Database'], id=tracking_id)
+        res = es.get(index=app.config['system_config']['Database']['Database'], id=tracking_id)
         return res
 
     @staticmethod
     def update_doc(tracking_id, doc_to_update):
-        es.update(index=app.config['dev_config']['Database']['Database'], id=tracking_id, doc_type="_doc", body=doc_to_update)
+        es.update(index=app.config['system_config']['Database']['Database'], id=tracking_id, doc_type="_doc", body=doc_to_update)
         return None
 
     @staticmethod
@@ -114,5 +114,5 @@ class ElasticSearchResource:
                     query['query']['bool']['must'].append({"match": {"incident_details."+field: doc_to_search[field]}})
                 else:
                     query['query']['bool']['must'].append({"match": {field: doc_to_search[field]}})
-        resp = es.search(index=app.config['dev_config']['Database']['Database'], body=query)
+        resp = es.search(index=app.config['system_config']['Database']['Database'], body=query)
         return resp

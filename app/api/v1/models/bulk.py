@@ -52,7 +52,7 @@ from .eshelper import ElasticSearchResource
 from datetime import datetime
 
 
-class Cplc(db.Model):
+class Bulk(db.Model):
     """Case database model"""
     id = db.Column(db.Integer, primary_key=True)
     imei = db.Column(db.String(20))
@@ -100,7 +100,7 @@ class Cplc(db.Model):
             case = cls(imei, msisdn, status, alternate_number)
             db.session.add(case)
             db.session.commit()
-            document = Cplc.get_case(imei)
+            document = Bulk.get_case(imei)
             doc = {
                 "device_details": {
                     "imeis": [document['imei']],
@@ -118,7 +118,7 @@ class Cplc(db.Model):
                 "status": "Recovered" if document['status'] == 1 else "Blocked" if document['status'] == 2 else "Pending",
                 "comments": {}
             }
-            ElasticSearchResource.insert_doc(doc, "CPLC")
+            ElasticSearchResource.insert_doc(doc, "Bulk")
             return CODES.get('OK')
         except Exception:
             db.session.rollback()
@@ -130,7 +130,7 @@ class Cplc(db.Model):
     def get_case(imei):
         """Retrieve data by imei."""
         try:
-            case = Cplc.query.filter_by(imei=imei).first()
+            case = Bulk.query.filter_by(imei=imei).first()
             if case:
                 return case.serialize
             return {}
@@ -167,11 +167,11 @@ class Cplc(db.Model):
             db.session.close()
 
     @staticmethod
-    def find_cplc_data(imeis):
+    def find_bulk_data(imeis):
         """Check if data already exists."""
         try:
             for imei in imeis:
-                flag = Cplc.get_case(imei)
+                flag = Bulk.get_case(imei)
                 if flag and flag.get('status') == 2:
                     return flag
             return {}
@@ -180,11 +180,11 @@ class Cplc(db.Model):
             raise Exception
 
     @staticmethod
-    def find_cplc(imeis):
+    def find_bulk(imeis):
         """Check if data already exists."""
         try:
             for imei in imeis:
-                flag = Cplc.get_case(imei)
+                flag = Bulk.get_case(imei)
                 if flag:
                     return flag
             return {}

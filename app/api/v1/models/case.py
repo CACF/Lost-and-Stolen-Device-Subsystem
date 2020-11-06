@@ -28,7 +28,7 @@ from ..models.devicedetails import DeviceDetails
 from ..models.deviceimei import DeviceImei
 # noinspection PyUnresolvedReferences
 from ..models.casecomments import CaseComments
-from ..models.cplc import Cplc
+from ..models.bulk import Bulk
 from ..assets.response import CODES
 
 from .eshelper import ElasticSearchResource
@@ -43,8 +43,7 @@ class Case(db.Model):
     case_status = db.Column(db.Integer, db.ForeignKey('status.id'))
     tracking_id = db.Column(db.String(64))  # Generate unique case tracking id
     created_at = db.Column(db.DateTime, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime, server_default=db.func.now(),
-                           onupdate=db.func.now())
+    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
     get_blocked = db.Column(db.Boolean)
     case_incident_details = db.relationship("CaseIncidentDetails", backref="case", passive_deletes=True, lazy=True)
     case_personal_details = db.relationship("CasePersonalDetails", backref="case", passive_deletes=True, lazy=True)
@@ -125,11 +124,11 @@ class Case(db.Model):
             trigger = 'SET ROLE case_user; COMMIT;'
             db.session.execute(trigger)
             flag = Case.find_data(args['device_details']['imeis'])
-            cplc_flag = Cplc.find_cplc_data(args['device_details']['imeis'])
+            bulk_flag = Bulk.find_bulk_data(args['device_details']['imeis'])
             if flag:
                 return {"code": CODES.get('CONFLICT'), "data": flag, "reason": "LSDS"}
-            elif cplc_flag:
-                return {"code": CODES.get('CONFLICT'), "data": cplc_flag, "reason": "CPLC"}
+            elif bulk_flag:
+                return {"code": CODES.get('CONFLICT'), "data": bulk_flag, "reason": "Bulk"}
             else:
                 case = cls(args)
                 db.session.add(case)

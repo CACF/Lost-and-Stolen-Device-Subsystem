@@ -76,19 +76,19 @@ Server:
   Port : '5001'
 
 UPLOADS:
-  list_dir : '/home/yasirxeshan/cacf/lsds-uploads/lists/'
-  report_dir : '/home/yasirxeshan/cacf/lsds-uploads/reports/'
+  list_dir : '/absolute_path_to_directory/'
+  report_dir : '/absolute_path_to_directory/'
 
 ELASTIC_SEARCH:
   Host : 'localhost'
   Port : '9200'
 
 dirbs_core:
-  base_url : 'http://192.168.100.72:5000'
-  version : '/api/v2'
+  base_url : 'dirbs_core_base_url'
+  version : '/api/version'
 
 SMSC:
-  BaseUrl : 'http://192.168.100.70:13013/cgi-bin/sendsms'
+  BaseUrl : 'kennel_gateway_url'
   Username : 'tester'
   Password : 'foobar'
   Text : 'some message'

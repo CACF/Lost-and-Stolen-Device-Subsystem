@@ -48,12 +48,12 @@ class GenList:
             return "Exception occurred while getting distinct imeis."
 
     @staticmethod
-    def get_distinct_cplc_imeis():
+    def get_distinct_bulk_imeis():
         try:
-            app.logger.info("getting IMEIs from cplc.")
+            app.logger.info("getting IMEIs from Bulk.")
             response_data = []  # distinct imeis list
             done = set()  # set of distinct IMEIs
-            sql = "select status, created_at, imei, msisdn from public.cplc"
+            sql = "select status, created_at, imei, msisdn from public.bulk"
             query = db.engine.execute(sql)  # retrieve imeis from case, device and imei models
             for row in reversed(list(query)):  # iterate results
                 data = dict((col, val) for col, val in row.items())  # serialize in key, value pairs
@@ -75,7 +75,7 @@ class GenList:
             trigger = 'SET ROLE delta_list_user; COMMIT;'
             db.session.execute(trigger)
             resp1 = GenList.get_distinct_imeis()
-            resp2 = GenList.get_distinct_cplc_imeis()
+            resp2 = GenList.get_distinct_bulk_imeis()
             resp = resp1+resp2
             app.logger.info("Comparing IMEIs with previous delta...")
             delta_list = []  # delta list
@@ -125,7 +125,7 @@ class GenList:
             stolen_delta_list = pd.DataFrame(list)
             time = datetime.now().strftime("%m-%d-%YT%H%M%S")
             report_name = name+time+'.csv'
-            stolen_delta_list.to_csv(os.path.join(app.config['dev_config']['UPLOADS']['list_dir'], report_name), sep=',', index=False)  # writing stolen list to .csv file
+            stolen_delta_list.to_csv(os.path.join(app.config['system_config']['UPLOADS']['list_dir'], report_name), sep=',', index=False)  # writing stolen list to .csv file
             app.logger.info("Delta list saved successfully")
             return "List "+report_name+" has been saved successfully."
         except Exception as e:
@@ -143,7 +143,7 @@ class GenList:
             sql = "select case_status, created_at, i.imei from public.case as c, device_details as d, device_imei as i where d.case_id=c.id and d.id=i.device_id"
             query = db.engine.execute(sql)  # retrieve imeis from case, device and imei models
             resp1 = list(query)
-            resp2 = GenList.get_distinct_cplc_imeis()
+            resp2 = GenList.get_distinct_bulk_imeis()
             results = resp1 + resp2
             with tqdm(total=len(results)) as pbar:
                 for row in reversed(results):  # iterate results

@@ -19,7 +19,7 @@ from .resources.admin import FetchImei, FetchMsisdn
 from .resources.system import IncidentNature, CaseStatus
 from .resources.case import CaseRoutes, CaseList, InsertCase, UpdateCase, BlockAll, CheckStatus
 from .resources.search import ES_Search
-from .resources.cplc import BlockCases, DownloadFile
+from .resources.bulk import BlockCases, DownloadFile
 
 # noinspection PyUnresolvedReferences
 from .assets.error_handlers import *
@@ -56,7 +56,7 @@ api.add_resource(BlockAll, '/block_all')
 # noinspection PyTypeChecker
 api.add_resource(CheckStatus, '/status/<task_id>')
 # noinspection PyTypeChecker
-api.add_resource(BlockCases, '/cplc_block')
+api.add_resource(BlockCases, '/bulk')
 # noinspection PyTypeChecker
 api.add_resource(DownloadFile, '/download/<filename>')
 docs = apidoc.init_doc()
@@ -64,8 +64,13 @@ docs = apidoc.init_doc()
 
 def register():
     """Method to register routes for docs."""
-    for route in [BaseRoutes, FetchImei, FetchMsisdn, IncidentNature, CaseStatus, CaseList, CaseRoutes, InsertCase,
-                  UpdateCase, ES_Search, BlockAll, CheckStatus, BlockCases, DownloadFile]:
+    # for route in [BaseRoutes, FetchImei, FetchMsisdn, IncidentNature, CaseStatus, CaseList, CaseRoutes, InsertCase,
+    #               UpdateCase, ES_Search, BlockAll, CheckStatus, BlockCases, DownloadFile]:
+
+    # for route in [DownloadFile]:
+
+    for route in [BaseRoutes, CaseList, CaseRoutes, InsertCase, UpdateCase, CheckStatus, BlockAll, CaseList, CaseStatus,
+                  BlockCases, FetchImei, FetchMsisdn, IncidentNature, ES_Search, DownloadFile]:
         docs.register(route)
 
 

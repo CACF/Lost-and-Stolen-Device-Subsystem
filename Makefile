@@ -31,7 +31,7 @@ clean-pyc:
 
 start-dev:
 	pip3 install -r requirements.txt
-	pip3 install webargs==3.0.1
+# 	pip3 install webargs==6.1.1
 	python3 run.py
 
 install-db:

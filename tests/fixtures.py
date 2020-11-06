@@ -51,8 +51,8 @@ def app(tmpdir_factory):
     temp_lists = tmpdir_factory.mktemp('uploads')
 
     # update upload directories path
-    app_.config['dev_config'] = config
-    app_.config['dev_config']['UPLOADS']['list_dir'] = str(temp_lists)
+    app_.config['system_config'] = config
+    app_.config['system_config']['UPLOADS']['list_dir'] = str(temp_lists)
 
     # initialize temp database and yield app
     postgresql = Postgresql()
@@ -196,8 +196,8 @@ def dirbs_core_mock(app, mocked_tac_data, mocked_imei_data, mocked_reg_data, moc
     pairings_resp = mocked_pairings_data
     imei_batch_resp = mocked_imei_data['bulk']
 
-    dirbs_core_api = app.config['dev_config']['dirbs_core']['base_url']
-    dirbs_core_api_version = app.config['dev_config']['dirbs_core']['version']
+    dirbs_core_api = app.config['system_config']['dirbs_core']['base_url']
+    dirbs_core_api_version = app.config['system_config']['dirbs_core']['version']
 
     # mock dirbs core tac batch call
     httpretty.register_uri(httpretty.POST,

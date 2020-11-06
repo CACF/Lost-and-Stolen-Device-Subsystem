@@ -144,7 +144,7 @@ class Search(MethodResource):
 class ES_Search(MethodResource):
 
     @doc(description='Search cases', tags=['Search'])
-    @use_kwargs(SearchSchema().fields_dict, locations=['json'])
+    @use_kwargs(SearchSchema().fields_dict, location='json')
     def post(self, **kwargs):
         """Return search results."""
         request_data = kwargs.get("search_args")

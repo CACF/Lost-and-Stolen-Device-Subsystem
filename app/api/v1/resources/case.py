@@ -78,7 +78,7 @@ class CaseRoutes(MethodResource):
             return response
 
     @doc(description='Update case details', tags=['Case'])
-    @use_kwargs(CaseUpdateSchema().fields_dict, locations=['json'])
+    @use_kwargs(CaseUpdateSchema().fields_dict, location='json')
     @restricted
     def put(self, tracking_id, **kwargs):
         """Update case personal details."""
@@ -135,7 +135,7 @@ class CaseRoutes(MethodResource):
             return response
 
     @doc(description='Update case status', tags=['Case'])
-    @use_kwargs(CaseStatusUpdateSchema().fields_dict, locations=['json'])
+    @use_kwargs(CaseStatusUpdateSchema().fields_dict, location='json')
     @restricted
     def patch(self, tracking_id, **kwargs):
         """Update case status."""
@@ -197,7 +197,7 @@ class CaseList(MethodResource):
     """Flask resource to get list of cases."""
 
     @doc(description='Get list of cases', tags=['Cases'])
-    @use_kwargs(CasesSchema().fields_dict, locations=['query'])
+    @use_kwargs(CasesSchema().fields_dict, location='query')
     def get(self, **kwargs):
         """Return list of cases."""
 
@@ -263,13 +263,13 @@ class InsertCase(MethodResource):
     """Flak resource for case insertion."""
 
     @doc(description='Insert case', tags=['Case'])
-    @use_kwargs(CaseInsertSchema().fields_dict, locations=['json'])
+    @use_kwargs(CaseInsertSchema().fields_dict, location='json')
     def post(self, **kwargs):
         """Insert case details."""
         try:
             tracking_id = Case.create(kwargs)
             if tracking_id.get('code') == 409:
-                if tracking_id.get('reason') is "LSDS":
+                if tracking_id.get('reason') == "LSDS":
                     data = {
                         'message': _('IMEI: %(imei)s is a duplicate entry already reported at %(created_at)s with tracking id %(id)s.', imei=tracking_id.get('data')['imei'], created_at=tracking_id.get('data')['created_at'].strftime("%Y-%m-%d %H:%M:%S"), id=tracking_id.get('data')['tracking_id']),
                     }
@@ -278,7 +278,7 @@ class InsertCase(MethodResource):
                     return response
                 else:
                     data = {
-                        'message': _('IMEI: %(imei)s is already reported and blocked through CPLC.', imei=tracking_id.get('data').get('imei')),
+                        'message': _('IMEI: %(imei)s is already reported and blocked through Bulk.', imei=tracking_id.get('data').get('imei')),
                     }
                     response = Response(json.dumps(data), status=CODES.get("CONFLICT"),
                                         mimetype=MIME_TYPES.get("APPLICATION_JSON"))
@@ -324,7 +324,7 @@ class InsertCase(MethodResource):
 
 class UpdateCase(MethodResource):
     @doc(description='Update case information', tags=['Case'])
-    @use_kwargs(CaseGetBlockedSchema().fields_dict, locations=['json'])
+    @use_kwargs(CaseGetBlockedSchema().fields_dict, location='json')
     @restricted
     def patch(self, tracking_id, **args):
         """Update case get blocked information."""
@@ -366,7 +366,7 @@ class UpdateCase(MethodResource):
 
 class BlockAll(MethodResource):
     @doc(description='Block all pending cases', tags=['Cases'])
-    @use_kwargs(CasesSchema().fields_dict, locations=['query'])
+    @use_kwargs(CasesSchema().fields_dict, location='query')
     def get(self):
         response = (CeleryTasks.block_all.s() |
                     CeleryTasks.log_results.s(input=None)).apply_async()

@@ -19,12 +19,12 @@ import pandas as pd
 import uuid
 import tempfile
 import requests
-from ..models.cplc import Cplc
+from ..models.bulk import Bulk
 from ..models.case import Case
 from ..helpers.common_resources import CommonResources
 
 
-class CplcCommonResources:
+class BulkCommonResources:
     """Common functionality used across the system."""
     @staticmethod
     def save_file(file):
@@ -51,30 +51,32 @@ class CplcCommonResources:
         success_list = []
         for data in filtered_data:
             flag = Case.find_data([data['imei']])
-            flag2 = Cplc.find_cplc_data([data['imei']])
+            flag2 = Bulk.find_bulk_data([data['imei']])
             if flag:
-                CplcCommonResources.notify_users(data, app.config['dev_config']['SMSC']['AlreadyExist'])
-                failed_list.append({"imei": data['imei'], "status": "Exists in LSDS, reported at "+flag.get('created_at').strftime("%Y-%m-%d %H:%M:%S")+" with tracking id "+flag.get('tracking_id')+"."})
+                BulkCommonResources.notify_users(data, app.config['system_config']['SMSC']['AlreadyExist'])
+                failed_list.append({"imei": data['imei'], "status": "Exists in LSDS, reported at "+
+                                                                    flag.get('created_at').strftime("%Y-%m-%d %H:%M:%S")
+                                                                    +" with tracking id "+flag.get('tracking_id')+"."})
             elif flag2:
-                CplcCommonResources.notify_users(data, app.config['dev_config']['SMSC']['AlreadyExist'])
-                failed_list.append({"imei": data['imei'], "status": "Exists in CPLC , reported at "+flag2.get('created_at').strftime("%Y-%m-%d %H:%M:%S")})
+                BulkCommonResources.notify_users(data, app.config['system_config']['SMSC']['AlreadyExist'])
+                failed_list.append({"imei": data['imei'], "status": "Exists in Bulk , reported at "+flag2.get('created_at').strftime("%Y-%m-%d %H:%M:%S")})
             else:
                 subscribers = CommonResources.subscribers(data['imei'])
                 if subscribers['subscribers']:
                     msisdns = [subs['msisdn'] for subs in subscribers['subscribers']]
                     if data['msisdn'] in msisdns:
-                        if Cplc.find_cplc([data['imei']]):
-                            Cplc.update_status(data['imei'])
+                        if Bulk.find_bulk([data['imei']]):
+                            Bulk.update_status(data['imei'])
                         else:
-                            Cplc.create(data['imei'], data['msisdn'], 2, data['alternate_number'])
-                        CplcCommonResources.notify_users(data, app.config['dev_config']['SMSC']['Blocked'])
+                            Bulk.create(data['imei'], data['msisdn'], 2, data['alternate_number'])
+                        BulkCommonResources.notify_users(data, app.config['system_config']['SMSC']['Blocked'])
                         success_list.append(data['imei'])
                     else:
                         failed_list.append({"imei": data['imei'], "status": "Data does not match"})
-                        CplcCommonResources.notify_users(data, app.config['dev_config']['SMSC']['InfoMismatch'])
+                        BulkCommonResources.notify_users(data, app.config['system_config']['SMSC']['InfoMismatch'])
                 else:
                     failed_list.append({"imei": data['imei'], "status": "Data does not match"})
-                    CplcCommonResources.notify_users(data, app.config['dev_config']['SMSC']['InfoMismatch'])
+                    BulkCommonResources.notify_users(data, app.config['system_config']['SMSC']['InfoMismatch'])
         return failed_list, success_list
 
     @staticmethod
@@ -82,18 +84,18 @@ class CplcCommonResources:
         failed_list = []
         success_list = []
         for data in filtered_data:
-            flag = Cplc.get_case(data['imei'])
+            flag = Bulk.get_case(data['imei'])
             if flag:
                 if flag.get('status') == 1:
                     failed_list.append({"imei": data['imei'], "status": "Already unblocked"})
-                    CplcCommonResources.notify_users(data, app.config['dev_config']['SMSC']['AlreadyExist'])
+                    BulkCommonResources.notify_users(data, app.config['system_config']['SMSC']['AlreadyExist'])
                 else:
-                    Cplc.update_status(data['imei'])
+                    Bulk.update_status(data['imei'])
                     success_list.append(data['imei'])
-                    CplcCommonResources.notify_users(data, app.config['dev_config']['SMSC']['Unblocked'])
+                    BulkCommonResources.notify_users(data, app.config['system_config']['SMSC']['Unblocked'])
             else:
                 failed_list.append({"imei": data['imei'], "status": "Does not exist"})
-                CplcCommonResources.notify_users(data, app.config['dev_config']['SMSC']['DoesNotExist'])
+                BulkCommonResources.notify_users(data, app.config['system_config']['SMSC']['DoesNotExist'])
         return failed_list, success_list
 
     @staticmethod
@@ -104,7 +106,7 @@ class CplcCommonResources:
             if final_list:
                 complaint_report = pd.DataFrame(final_list)
                 report_name = report_name + str(uuid.uuid4()) + '.tsv'
-                complaint_report.to_csv(os.path.join(app.config['dev_config']['UPLOADS']['report_dir'], report_name), sep= '\t')
+                complaint_report.to_csv(os.path.join(app.config['system_config']['UPLOADS']['report_dir'], report_name), sep= '\t')
             else:
                 report_name = "report not generated."
             return report_name
@@ -116,14 +118,14 @@ class CplcCommonResources:
     @staticmethod
     def notify_users(data, message):
         return requests.get('{base}?username={username}&password={password}&to={to}&text={text}&from={from_no}'.
-                            format(base=app.config['dev_config']['SMSC']['BaseUrl'],
-                                   username=app.config['dev_config']['SMSC']['Username'],
+                            format(base=app.config['system_config']['SMSC']['BaseUrl'],
+                                   username=app.config['system_config']['SMSC']['Username'],
                                    to=data['alternate_number'], text=message,
-                                   password=app.config['dev_config']['SMSC']['Password'],
-                                   from_no=app.config['dev_config']['SMSC']['From']))
+                                   password=app.config['system_config']['SMSC']['Password'],
+                                   from_no=app.config['system_config']['SMSC']['From']))
 
     @staticmethod
-    def serialize_cplc_cases(cases):
+    def serialize_bulk_cases(cases):
         """Serialize response."""
         case_list = []
         for row in cases:
@@ -141,10 +143,7 @@ class CplcCommonResources:
                     "gin": case.get('gin'),
                     "email": case.get('email'),
                     "number": case.get('alternate_number'),
-                    "full_name": case.get('full_name'),
-                    "father_name": case.get('father_name'),
-                    "mother_name": case.get('mother_name'),
-                    "district": case.get('district')
+                    "full_name": case.get('full_name')
                 },
                 "tracking_id": str(case.get('id')),
                 "comments": case.get('comments'),
@@ -162,7 +161,7 @@ class CplcCommonResources:
                 },
                 "status": "Recovered" if case.get("status") == 1 else "Blocked" if case.get("status") == 2 else "Pending",
                 "updated_at": case.get('updated_at').strftime("%Y-%m-%d %H:%M:%S"),
-                "source": "CPLC"
+                "source": "Bulk"
             }
             cases.append(case_detail)
         return cases

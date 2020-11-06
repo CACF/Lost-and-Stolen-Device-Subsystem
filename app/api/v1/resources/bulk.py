@@ -18,15 +18,14 @@ import magic
 import pandas as pd
 from flask_restful import request
 
-
 from flask_babel import _
 from ..assets.response import MIME_TYPES, CODES, MESSAGES
 from ..assets.error_handlers import custom_response
 from ..models.summary import Summary
-from ..schema.case import CplcInsertSchema
+from ..schema.case import BulkInsertSchema
 from ..schema.validations import *
 from ..helpers.tasks import CeleryTasks
-from ..helpers.cplc_helpers import CplcCommonResources
+from ..helpers.bulk_helpers import BulkCommonResources
 
 from flask import Response, send_from_directory
 from flask_apispec import use_kwargs, MethodResource, doc
@@ -35,26 +34,28 @@ from flask_apispec import use_kwargs, MethodResource, doc
 class BlockCases(MethodResource):
     """Flak resource for case insertion."""
 
-    @doc(description='Block CPLC cases', tags=['cplc'])
-    @use_kwargs(CplcInsertSchema().fields_dict, locations=['form'])
+    @doc(description='Block/Unblock cases', tags=['bulk'])
+    @use_kwargs(BulkInsertSchema().fields_dict, location='form')
     def post(self, **args):
         """Insert case details."""
         try:
             args['file'] = request.files.get('file')
             file = args.get('file')
-            filepath = CplcCommonResources.save_file(file)
+            filepath = BulkCommonResources.save_file(file)
             filename = file.filename
             mimetype = magic.from_file(filepath, mime=True)
             if mimetype in app.config['system_config']['allowed_file_types'][
                 'AllowedTypes'] and '.' in filename and filename.rsplit('.', 1)[1].lower() in \
                     app.config['system_config']['allowed_file_types']['AllowedExt']:  # validate file type
-                cplc_file = pd.read_csv(filepath, index_col=False, dtype=str).astype(str)
-                if 'alternate_number' in cplc_file.columns:
+                bulk_file = pd.read_csv(filepath, index_col=False, dtype=str).astype(str)
+                if 'alternate_number' in bulk_file.columns:
                     response = []
                     if args.get('action') == "block":
-                        response = (CeleryTasks.cplc_block.s(list(cplc_file.T.to_dict().values())) | CeleryTasks.log_results.s(input="file")).apply_async()
+                        response = (CeleryTasks.bulk_block.s(list(bulk_file.T.to_dict().values())) |
+                                    CeleryTasks.log_results.s(input="file")).apply_async()
                     if args.get('action') == "unblock":
-                        response = (CeleryTasks.cplc_unblock.s(list(cplc_file.T.to_dict().values())) | CeleryTasks.log_results.s(input="file")).apply_async()
+                        response = (CeleryTasks.bulk_unblock.s(list(bulk_file.T.to_dict().values())) |
+                                    CeleryTasks.log_results.s(input="file")).apply_async()
                     summary_data = {
                         "tracking_id": response.parent.id,
                         "status": response.state,
@@ -74,7 +75,7 @@ class BlockCases(MethodResource):
                 return custom_response(_("System only accepts tsv/csv files."), CODES.get('BAD_REQUEST'), MIME_TYPES.get('JSON'))
         except Exception as e:
             app.logger.exception(e)
-            data = {'message': _('CPLC process failed')}
+            data = {'message': _('Bulk process failed')}
             response = Response(json.dumps(data), status=CODES.get('INTERNAL_SERVER_ERROR'),
                                 mimetype=MIME_TYPES.get('APPLICATION_JSON'))
             return response
@@ -83,12 +84,12 @@ class BlockCases(MethodResource):
 class DownloadFile(MethodResource):
     """Flask resource for downloading report."""
 
-    @doc(description="Download IMEIs report", tags=['cplc'])
+    @doc(description="Download IMEIs report", tags=['bulk'])
     def post(self, filename):
         """Sends downloadable report."""
         try:
             # returns file when user wants to download non compliance report
-            return send_from_directory(directory=app.config['dev_config']['UPLOADS']['report_dir'], filename=filename)
+            return send_from_directory(directory=app.config['system_config']['UPLOADS']['report_dir'], filename=filename)
         except Exception as e:
             app.logger.info("Error occurred while downloading non compliant report.")
             app.logger.exception(e)
